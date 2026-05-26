@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Akakçe Fiyat Takibi</title>
+  <meta name="description" content="Akprays - Akakçe Fiyat Takibi Chrome Uzantısı">
+  <meta property="og:title" content="Akprays - Akakçe Fiyat Takibi">
+  <meta property="og:description" content="Akakçe ürün fiyatlarını takip edin, fiyat geçmişini görün ve indirimleri bildirim olarak alın.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="auth-required">
+  <div class="header">
+    <div class="brand-block">
+      <img class="brand-logo" src="icons/icon128.png" width="28" height="28"
+        alt="Akprays Logo">
+      <div class="brand-copy">
+        <h1>Akprays</h1>
+        <span>emirhankiziloglu.com</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div id="user-profile" class="user-profile" style="cursor:pointer;" title="Hesap">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+        <span id="user-email">Giriş Yap</span>
+      </div>
+      <button id="btn-open-settings" class="header-icon-btn" title="Ayarlar" aria-label="Ayarlar" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.72l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Auth Screen — shown by default, slides out after login -->
+  <div id="auth-screen" style="position:fixed; inset:0; background:var(--background); z-index:50; transform:translateX(0); transition:transform 0.28s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; justify-content:center; padding:32px 28px;">
+
+    <!-- Logo & Title -->
+    <div style="text-align:center; margin-bottom:32px;">
+      <img src="icons/icon128.png" width="52" height="52" style="border-radius:12px; object-fit:contain; margin-bottom:14px;" alt="Akprays">
+      <div style="font-size:22px; font-weight:800; letter-spacing:0; margin:0 0 6px; line-height:1.08;">Akprays</div>
+      <p style="font-size:13px; color:var(--muted-foreground); margin:0;">Fiyat takibini buluta taşı</p>
+    </div>
+
+    <div id="auth-verifying" style="text-align:center;">
+      <div class="auth-spinner" aria-hidden="true"></div>
+      <div style="font-size:14px; font-weight:700; margin-bottom:6px;">Giriş doğrulanıyor</div>
+      <div style="font-size:12px; color:var(--muted-foreground);">Bulut oturumu kontrol ediliyor.</div>
+    </div>
+
+    <!-- Signed Out Form -->
+    <div id="auth-signed-out" style="display:none;">
+      <!-- Tabs -->
+      <div style="display:flex; background:var(--muted); border-radius:9999px; padding:3px; margin-bottom:18px;">
+        <button id="tab-signin-btn" style="flex:1; padding:9px; border-radius:9999px; border:none; background:var(--background); color:var(--foreground); font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; transition:all 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.4);">Giriş Yap</button>
+        <button id="tab-signup-btn" style="flex:1; padding:9px; border-radius:9999px; border:none; background:transparent; color:var(--muted-foreground); font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; transition:all 0.2s;">Kayıt Ol</button>
+      </div>
+
+      <div id="auth-error" style="display:none; background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2); border-radius:10px; padding:10px 14px; font-size:12px; margin-bottom:14px;"></div>
+
+      <input type="email" id="auth-email-input" placeholder="E-posta adresi" autocomplete="email" inputmode="email" required style="width:100%; box-sizing:border-box; margin-bottom:10px;">
+      <input type="password" id="auth-password-input" placeholder="Şifre (6-72 karakter)" autocomplete="current-password" minlength="6" maxlength="72" required style="width:100%; box-sizing:border-box; margin-bottom:16px;">
+
+      <div id="auth-signin-panel">
+        <button id="btn-email-signin" style="width:100%; padding:13px; border-radius:9999px; font-size:14px; font-weight:700; font-family:inherit; background:#2563eb; color:white; border:none; cursor:pointer; transition:all 0.2s; letter-spacing:-0.01em;">Giriş Yap</button>
+      </div>
+
+      <div id="auth-signup-panel" style="display:none;">
+        <button id="btn-email-signup" style="width:100%; padding:13px; border-radius:9999px; font-size:14px; font-weight:700; font-family:inherit; background:#2563eb; color:white; border:none; cursor:pointer; transition:all 0.2s; letter-spacing:-0.01em;">Hesap Oluştur</button>
+      </div>
+    </div>
+
+    <!-- Signed In Profile -->
+    <div id="auth-signed-in" style="display:none;">
+      <button id="btn-close-auth" class="auth-back-btn" type="button">Geri Dön</button>
+      <div style="background:var(--muted); border-radius:16px; padding:20px; text-align:center; margin-bottom:16px; border:1px solid var(--border);">
+        <div style="width:48px; height:48px; background:rgba(37,99,235,0.15); border:2px solid rgba(37,99,235,0.3); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </div>
+        <div id="auth-name" style="font-weight:700; font-size:15px; margin-bottom:3px;"></div>
+        <div id="auth-email-display" style="font-size:12px; color:var(--muted-foreground); margin-bottom:12px;"></div>
+        <span style="font-size:10px; background:rgba(37,99,235,0.15); color:#60a5fa; padding:3px 10px; border-radius:9999px; font-weight:600;">BULUT HESABI</span>
+      </div>
+      <div id="auth-product-count" style="font-size:12px; color:var(--muted-foreground); text-align:center; margin-bottom:16px;"></div>
+      <button id="btn-signout" style="width:100%; background:rgba(239,68,68,0.08); color:#ef4444; border:1px solid rgba(239,68,68,0.2); border-radius:9999px; font-size:13px; padding:12px; cursor:pointer; font-family:inherit; font-weight:600; transition:all 0.2s;">Çıkış Yap</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="search">Arama</button>
+    <button class="tab-btn" data-tab="tracked">Takip Edilenler</button>
+    <button class="tab-btn" data-tab="gaming">Gaming Gecesi</button>
+  </div>
+
+  <div id="status-message" class="hidden"></div>
+
+  <!-- Search Tab -->
+  <div id="tab-search" class="tab-content active">
+    <section class="search-panel" aria-label="Ürün arama">
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="Ürün ara...">
+        <button id="btn-search">Akakçe'de Ara</button>
+      </div>
+    </section>
+    <div id="search-default-views">
+      <div class="mini-section-title">
+        <span>Kampanyalar</span>
+        <small>Geri sayım</small>
+      </div>
+      <section class="deal-countdowns" aria-label="Kampanya geri sayımları">
+        <a class="deal-countdown-card" href="https://www.incehesap.com/gaming-geceleri/" target="_blank" rel="noopener noreferrer">
+          <div class="deal-left">
+            <div class="deal-countdown-header">
+              <svg class="deal-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" fill="#2563eb"/>
+                <circle cx="10" cy="8" r="1.8" fill="#f97316"/>
+                <rect x="9" y="11" width="2" height="6" rx="1" fill="#ffffff"/>
+                <path d="M13 11v6m0-3.5c0-1.5.5-1.5 1.5-1.5s1.5.5 1.5 1.5V17" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              </svg>
+              <span class="deal-countdown-label">İncehesap</span>
+            </div>
+            <strong>Gaming Gecesi</strong>
+            <small>Cuma 22:00 - 02:00</small>
+          </div>
+          <div class="deal-right">
+            <span id="countdown-gaming-gecesi" class="deal-countdown-time">Hesaplanıyor</span>
+          </div>
+        </a>
+        <a class="deal-countdown-card" href="https://www.itopya.com/itopik-saatler_s357" target="_blank" rel="noopener noreferrer">
+          <div class="deal-left">
+            <div class="deal-countdown-header">
+              <svg class="deal-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" fill="#f97316"/>
+                <path d="M7 11.5c0-2.5 2.2-4.5 5-4.5s5 2 5 4.5c0 1.8-1.2 3.3-2.8 4.1l.8 1.9h-6l.8-1.9C8.2 14.8 7 13.3 7 11.5z" fill="#000000"/>
+                <circle cx="10" cy="11" r="1" fill="#f97316"/>
+                <circle cx="14" cy="11" r="1" fill="#f97316"/>
+                <path d="M9 7.5L8 5.5M15 7.5l1-2" stroke="#000000" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+              <span class="deal-countdown-label">İtopya</span>
+            </div>
+            <strong>İtopik Saatler</strong>
+            <small>Çarşamba 16:00 - 22:00</small>
+          </div>
+          <div class="deal-right">
+            <span id="countdown-itopik-saatler" class="deal-countdown-time">Hesaplanıyor</span>
+          </div>
+        </a>
+        <a class="deal-countdown-card" href="https://www.itopya.com/acil-susam-acil_s355" target="_blank" rel="noopener noreferrer">
+          <div class="deal-left">
+            <div class="deal-countdown-header">
+              <svg class="deal-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" fill="#f97316"/>
+                <path d="M7 11.5c0-2.5 2.2-4.5 5-4.5s5 2 5 4.5c0 1.8-1.2 3.3-2.8 4.1l.8 1.9h-6l.8-1.9C8.2 14.8 7 13.3 7 11.5z" fill="#000000"/>
+                <circle cx="10" cy="11" r="1" fill="#f97316"/>
+                <circle cx="14" cy="11" r="1" fill="#f97316"/>
+                <path d="M9 7.5L8 5.5M15 7.5l1-2" stroke="#000000" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+              <span class="deal-countdown-label">İtopya</span>
+            </div>
+            <strong>Acil Susam Açıl</strong>
+            <small>15-21 Haziran · Her gün 16:00</small>
+          </div>
+          <div class="deal-right">
+            <span id="countdown-acil-susam-acil" class="deal-countdown-time">Hesaplanıyor</span>
+          </div>
+        </a>
+      </section>
+      <a class="forum-shortcut" href="https://forum.donanimarsivi.com/forumlar/Sicakfirsatlar/?prefix_id=10&last_days=7" target="_blank" rel="noopener noreferrer">
+        <span>Forum</span>
+        <strong>Donanım Arşivi Sıcak Fırsatlar</strong>
+        <small>Son 7 gün filtreli</small>
+      </a>
+
+      <div id="serious-deals" class="deals-section"></div>
+    </div>
+    <div id="search-results" class="results-container"></div>
+  </div>
+
+  <!-- Tracked Tab -->
+  <div id="tab-tracked" class="tab-content">
+    <div class="tracked-controls" aria-label="Takip edilenler filtreleri">
+      <div class="custom-select" data-select-id="filter-category">
+        <select id="filter-category" class="filter-select native-filter-select" tabindex="-1" aria-hidden="true">
+          <option value="">Tümü</option>
+        </select>
+        <button class="select-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+          <span class="select-value">Tümü</span>
+          <svg class="select-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </button>
+        <div class="select-content" role="listbox" hidden></div>
+      </div>
+      <div class="custom-select" data-select-id="filter-discount">
+        <select id="filter-discount" class="filter-select native-filter-select" tabindex="-1" aria-hidden="true">
+          <option value="all" data-tone="neutral">Tümü</option>
+          <option value="discounted_only" data-tone="success">Düşenler</option>
+          <option value="increased_only" data-tone="danger">Artanlar</option>
+          <option value="unchanged_only" data-tone="warning">Sabitler</option>
+        </select>
+        <button class="select-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+          <span class="select-value"><span class="select-dot tone-neutral" aria-hidden="true"></span>Tümü</span>
+          <svg class="select-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </button>
+        <div class="select-content" role="listbox" hidden></div>
+      </div>
+      <button id="btn-check-all" class="toolbar-btn icon-only-btn" title="Yenile" aria-label="Yenile">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-8.27l-5.67-5.67" />
+        </svg>
+      </button>
+
+      <div class="toolbar-menu">
+        <button id="btn-tracked-menu" class="toolbar-menu-btn" title="Daha fazla" aria-label="Daha fazla" aria-expanded="false">
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="1"/>
+            <circle cx="12" cy="5" r="1"/>
+            <circle cx="12" cy="19" r="1"/>
+          </svg>
+        </button>
+        <div id="tracked-overflow-menu" class="overflow-menu" hidden>
+          <button id="btn-export" class="overflow-menu-item" type="button">Dışa Aktar</button>
+          <button id="btn-import" class="overflow-menu-item" type="button">İçe Aktar</button>
+        </div>
+      </div>
+      <input type="file" id="import-file" accept=".json" style="display:none;">
+    </div>
+    <!-- Scan Progress UI -->
+    <div id="scan-progress" class="scan-progress-panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 12px; font-weight: 650; color: var(--foreground);"
+          id="scan-status-text">Taranıyor...</span>
+        <span style="font-size: 11px; font-weight: 600; color: var(--muted-foreground);" id="scan-counter">0 / 0</span>
+      </div>
+      <div style="background: var(--muted); border-radius: 9999px; height: 6px; overflow: hidden;">
+        <div id="scan-progress-bar"
+          style="height: 100%; width: 0%; background: var(--foreground); border-radius: 9999px; transition: width 0.4s ease;">
+        </div>
+      </div>
+      <div id="scan-current-item"
+        style="font-size: 11px; font-weight: 550; color: var(--muted-foreground); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+      </div>
+    </div>
+    <div id="tracked-list" class="results-container"></div>
+  </div>
+  <!-- Gaming Gecesi Tab -->
+  <div id="tab-gaming" class="tab-content">
+    <section class="gaming-panel" aria-label="İncehesap Gaming Gecesi">
+      <div class="gaming-header">
+        <div>
+          <h2>Gaming Gecesi</h2>
+          <span id="gaming-sync-meta">Supabase arşivi</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="gaming-countdown" class="deal-countdown-time" style="font-size: 11px; padding: 3px 7px;">Hesaplanıyor</span>
+          <button id="btn-gaming-refresh" class="toolbar-btn icon-only-btn" title="Senkronize et" aria-label="Gaming Gecesi verilerini senkronize et">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-8.27l-5.67-5.67" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="gaming-controls">
+        <div class="custom-select" data-select-id="gaming-week-select">
+          <select id="gaming-week-select" class="filter-select native-filter-select" tabindex="-1" aria-hidden="true">
+            <option value="">Hafta</option>
+          </select>
+          <button class="select-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="select-value">Hafta</span>
+            <svg class="select-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </button>
+          <div class="select-content" role="listbox" hidden></div>
+        </div>
+        <div class="custom-select" data-select-id="gaming-category-select">
+          <select id="gaming-category-select" class="filter-select native-filter-select" tabindex="-1" aria-hidden="true">
+            <option value="all">Tümü</option>
+          </select>
+          <button class="select-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="select-value">Tümü</span>
+            <svg class="select-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </button>
+          <div class="select-content" role="listbox" hidden></div>
+        </div>
+        <input id="gaming-search-input" type="text" placeholder="Ürün ara...">
+      </div>
+
+      <div id="gaming-list" class="gaming-list">
+        <div class="empty-state"><p>Gaming Gecesi verileri yükleniyor.</p></div>
+      </div>
+    </section>
+  </div>
+  <!-- Settings Tab -->
+  <div id="tab-settings" class="tab-content">
+    <div class="settings-group">
+      <label>Kontrol Aralığı (Dakika)</label>
+      <input type="number" id="setting-interval" min="45" value="60">
+    </div>
+
+    <div class="settings-group">
+      <label>
+        <input type="checkbox" id="setting-discord-enable"> Discord Bildirimleri
+      </label>
+      <input type="text" id="setting-discord-webhook" placeholder="Discord Webhook URL">
+      <button id="btn-test-discord" class="secondary-btn">Discord Test Et</button>
+    </div>
+
+    <div class="settings-group">
+      <label>
+        <input type="checkbox" id="setting-whatsapp-enable"> WhatsApp Bildirimleri (CallMeBot)
+      </label>
+      <input type="text" id="setting-whatsapp-phone" placeholder="Telefon (ülke koduyla, örn: 905XXXXXXXXX)">
+      <input type="password" id="setting-whatsapp-apikey" placeholder="CallMeBot API Key">
+      <a class="help-text" href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" rel="noopener noreferrer">Telefon ve API key için CallMeBot kurulum rehberi</a>
+      <button id="btn-test-whatsapp" class="secondary-btn">WhatsApp Test Et</button>
+    </div>
+
+    <button id="btn-save-settings">Ayarları Kaydet</button>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+
+</html>

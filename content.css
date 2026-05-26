@@ -1,0 +1,118 @@
+#akakce-tracker-injected-ui {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999999;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.ak-tracker-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  transition: all 0.2s ease;
+}
+
+.ak-tracker-btn:hover {
+  background-color: #2563eb;
+  transform: translateY(-2px);
+}
+
+.ak-tracker-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.ak-tracker-btn.ak-tracked {
+  background-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+.ak-tracker-btn.ak-tracked:hover {
+  background-color: #059669;
+}
+
+.ak-tracker-popup {
+  position: absolute;
+  bottom: 60px;
+  right: 0;
+  width: 280px;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  border: 1px solid #e2e8f0;
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ak-tracker-popup.ak-show {
+  display: flex;
+  animation: akFadeUp 0.2s ease-out;
+}
+
+@keyframes akFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ak-tracker-popup h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #1e293b;
+}
+
+.ak-tracker-popup p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.ak-tracker-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ak-tracker-input-group label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.ak-tracker-input-group input {
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ak-tracker-input-group input:focus {
+  border-color: #3b82f6;
+}
+
+.ak-tracker-save-btn {
+  background-color: #1e293b;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.ak-tracker-save-btn:hover {
+  background-color: #0f172a;
+}
