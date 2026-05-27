@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
     const shortDate = formatShortDate(nearest.date);
-    const boughtMarker = isBoughtPoint ? ` <span style="color: #fbbf24; font-weight: 700;">(ğŸ›’ SatÄ±n AlÄ±ndÄ±)</span>` : '';
+    const boughtMarker = isBoughtPoint ? ` <span style="color: #fbbf24; font-weight: 700;">(Satın Alındı)</span>` : '';
     tooltip.innerHTML = `${shortDate} Â· ${priceStr}${changeHtml}${boughtMarker}`;
     tooltip.classList.add('visible');
 
@@ -215,9 +215,9 @@ async function loadGamingWeeksFromCloud() {
   renderGamingWeekOptions();
 
   if (gamingWeeks.length === 0) {
-    setGamingMeta('Supabase arÅŸivi boÅŸ. Senkronize et.');
+    setGamingMeta('Supabase arşivi boş. Senkronize et.');
     const list = document.getElementById('gaming-list');
-    if (list) list.innerHTML = `<div class="empty-state"><p>HenÃ¼z Gaming Gecesi arÅŸivi yok.</p></div>`;
+    if (list) list.innerHTML = `<div class="empty-state"><p>Henüz Gaming Gecesi arşivi yok.</p></div>`;
     return;
   }
 
@@ -266,7 +266,7 @@ async function loadGamingProductsFromCloud() {
   renderGamingProducts();
 
   const weekMeta = gamingWeeks.find(item => item.campaign_week === week);
-  setGamingMeta(weekMeta?.source_updated_at ? `Son gÃ¼ncelleme: ${formatDateTime(weekMeta.source_updated_at)}` : 'Supabase arÅŸivi');
+  setGamingMeta(weekMeta?.source_updated_at ? `Son güncelleme: ${formatDateTime(weekMeta.source_updated_at)}` : 'Supabase arşivi');
 }
 
 async function syncGamingGecesiArchive({ force = false } = {}) {
@@ -293,7 +293,7 @@ async function syncGamingGecesiArchive({ force = false } = {}) {
     setGamingMeta('Senkron tamamlandÄ±');
     await loadGamingWeeksFromCloud();
   } catch (error) {
-    setGamingMeta(`Senkron baÅŸarÄ±sÄ±z: ${error.message}`);
+    setGamingMeta(`Senkron başarısız: ${error.message}`);
     showStatus('Gaming Gecesi senkronize edilemedi: ' + error.message, 'error');
   } finally {
     if (btn) btn.disabled = false;
@@ -305,7 +305,7 @@ function updateGamingCategories() {
   if (!select) return;
   const selected = select.value;
   const categories = [...new Set(gamingProducts.map(product => product.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr'));
-  select.innerHTML = '<option value="all">TÃ¼mÃ¼</option>';
+    select.innerHTML = '<option value="all">Tümü</option>';
   categories.forEach(category => {
     const option = document.createElement('option');
     option.value = category;
@@ -1227,18 +1227,37 @@ function extractEpeyProductFromPage(url, query) {
     .map(match => Number.parseFloat(match[1].replace(/\s/g, '').replace(/\./g, '').replace(',', '.')))
     .filter(price => Number.isFinite(price) && price > 0);
   if (prices.length === 0) return null;
+  const price = chooseRepresentativeLowestPrice(prices.slice(0, 30));
+  if (!price) return null;
 
   const productUrl = location.href || url;
   const id = btoa(encodeURIComponent(productUrl)).replace(/=/g, '').slice(-30);
   return {
     id,
     title,
-    price: Math.min(...prices.slice(0, 30)),
+    price,
     url: productUrl,
     store: 'Epey',
     category: 'İşlemci',
     source: 'epey'
   };
+}
+
+function chooseRepresentativeLowestPrice(prices) {
+  const sorted = prices
+    .map(Number)
+    .filter(price => Number.isFinite(price) && price > 0)
+    .sort((a, b) => a - b);
+  if (sorted.length === 0) return 0;
+  if (sorted.length === 1) return sorted[0];
+
+  const mid = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2 === 0
+    ? (sorted[mid - 1] + sorted[mid]) / 2
+    : sorted[mid];
+  const plausibleFloor = median * 0.35;
+  const plausible = sorted.filter(price => price >= plausibleFloor);
+  return plausible.length ? plausible[0] : sorted[0];
 }
 
 function parseHttpUrl(value) {
@@ -1369,7 +1388,7 @@ function renderSearchResults(products) {
       const original = Number(analysis.originalPrice || product.price);
       const current = Number(product.price);
       
-      let badgeLabel = 'Sepette Ä°ndirim';
+      let badgeLabel = 'Sepette İndirim';
       let badgeClass = 'badge-discount-sepet';
       
       if (type === 'webe_ozel') {
@@ -1433,7 +1452,7 @@ async function trackProduct(product, btnElement) {
         btnElement.style.background = '';
       }, 2000);
     } else {
-      showStatus('Bu Ã¼rÃ¼n zaten takipte.', 'error');
+      showStatus('Bu ürün zaten takipte.', 'error');
     }
     return;
   }
@@ -1503,8 +1522,8 @@ function formatDateTime(value) {
 }
 
 function getPriceStateClass(product) {
-  const currentPrice = Number(product?.currentPrice || product?.price);
   const previousPrice = Number(product?.previousPrice);
+  const currentPrice = getSaneCurrentPrice(Number(product?.currentPrice || product?.price), previousPrice);
   const hasSepet = product?.akakceMarketAnalysis && product?.akakceMarketAnalysis.discountType;
 
   if (hasSepet) return 'price-drop';
@@ -1519,11 +1538,26 @@ function getPriceChangePercent(currentPrice, previousPrice) {
   return ((currentPrice - previousPrice) / previousPrice) * 100;
 }
 
+function getSaneCurrentPrice(currentPrice, previousPrice) {
+  const current = Number(currentPrice);
+  const previous = Number(previousPrice);
+  if (!Number.isFinite(current) || current <= 0) return current;
+  if (!Number.isFinite(previous) || previous <= 1000) return current;
+  if (current < previous * 0.25 && current < 1000) return previous;
+  return current;
+}
+
 function getDistinctPriceEntries(history) {
   if (!Array.isArray(history)) return [];
-  const valid = history
+  const sorted = history
     .filter(item => Number(item.price) > 0)
     .sort((a, b) => new Date(a.checkedAt) - new Date(b.checkedAt));
+  const valid = sorted.filter((item, index) => {
+    const price = Number(item.price);
+    const previous = sorted[index - 1] ? Number(sorted[index - 1].price) : 0;
+    const next = sorted[index + 1] ? Number(sorted[index + 1].price) : 0;
+    return !isSuspiciousLowOutlier(price, previous || next);
+  });
   if (valid.length <= 2) return valid;
 
   // First pass: deduplicate consecutive same-price entries
@@ -1550,6 +1584,16 @@ function getDistinctPriceEntries(history) {
   }
   result.push(deduped[deduped.length - 1]);
   return result;
+}
+
+function isSuspiciousLowOutlier(price, referencePrice) {
+  const priceValue = Number(price);
+  const reference = Number(referencePrice);
+  return Number.isFinite(priceValue)
+    && Number.isFinite(reference)
+    && reference > 1000
+    && priceValue < 1000
+    && priceValue < reference * 0.25;
 }
 
 function formatSignedPercent(value) {
@@ -1674,7 +1718,7 @@ function generateSparkline(history, targetPrice, boughtAt, boughtPrice) {
     const bp = coordsForChart[boughtIndex];
     boughtLineHtml = `
       <line class="chart-bought-line" x1="${bp.x}" x2="${bp.x}" y1="${topForChart}" y2="${hForChart - bottomForChart}" style="stroke: #fbbf24; stroke-width: 1.25px; stroke-dasharray: 3,3; opacity: 0.85;"/>
-      <text class="chart-bought-label" x="${bp.x + 4}" y="${topForChart + 9}" style="fill: #fbbf24; font-size: 8px; font-weight: 700; pointer-events: none;">SatÄ±n AlÄ±ndÄ±</text>
+      <text class="chart-bought-label" x="${bp.x + 4}" y="${topForChart + 9}" style="fill: #fbbf24; font-size: 8px; font-weight: 700; pointer-events: none;">Satın Alındı</text>
     `;
   }
 
@@ -1689,11 +1733,11 @@ function generateSparkline(history, targetPrice, boughtAt, boughtPrice) {
   let trendBadge = '';
   if (Math.abs(trendPercent) >= 0.5) {
     const isDown = trendPercent < 0;
-    const arrow = isDown ? 'â†“' : 'â†‘';
+    const arrow = isDown ? '↓' : '↑';
     const cls = isDown ? 'trend-down' : 'trend-up';
     trendBadge = `<span class="chart-trend-badge ${cls}">${arrow} %${Math.abs(Math.round(trendPercent))}</span>`;
   } else {
-    trendBadge = `<span class="chart-trend-badge trend-flat">â†’ Sabit</span>`;
+    trendBadge = `<span class="chart-trend-badge trend-flat">→ Sabit</span>`;
   }
 
   // Store coords as JSON for interactive tooltip
@@ -1739,9 +1783,9 @@ function generateSparkline(history, targetPrice, boughtAt, boughtPrice) {
 }
 
 function generatePriceAnalysis(product) {
-  const currentPrice = Number(product.currentPrice || product.price);
   const entries = getDistinctPriceEntries(product.priceHistory);
   const prices = entries.map(item => Number(item.price)).filter(price => price > 0);
+  const currentPrice = getSaneCurrentPrice(Number(product.currentPrice || product.price), Number(product.previousPrice || prices[prices.length - 1]));
 
   if (!currentPrice || prices.length < 2) return '';
 
@@ -1754,19 +1798,19 @@ function generatePriceAnalysis(product) {
   let verdict = '';
   let verdictClass = 'analysis-neutral';
   if (currentPrice <= minPrice) {
-    verdict = 'ğŸŸ¢ En dÃ¼ÅŸÃ¼k fiyat';
+    verdict = 'En düşük fiyat';
     verdictClass = 'analysis-good';
   } else if (periodDiffPercent < -3) {
-    verdict = `ğŸŸ¢ BaÅŸlangÄ±ca gÃ¶re ${formatSignedPercent(periodDiffPercent)}`;
+    verdict = `Başlangıca göre ${formatSignedPercent(periodDiffPercent)}`;
     verdictClass = 'analysis-good';
   } else if (periodDiffPercent > 3) {
-    verdict = `ğŸ”´ BaÅŸlangÄ±ca gÃ¶re ${formatSignedPercent(periodDiffPercent)}`;
+    verdict = `Başlangıca göre ${formatSignedPercent(periodDiffPercent)}`;
     verdictClass = 'analysis-bad';
   }
 
   return `
     <div class="price-analysis-mini">
-      <span>${formatPrice(minPrice)} â€“ ${formatPrice(maxPrice)}</span>
+      <span>${formatPrice(minPrice)} - ${formatPrice(maxPrice)}</span>
       ${verdict ? `<span class="${verdictClass}">${verdict}</span>` : ''}
     </div>
   `;
@@ -1778,8 +1822,9 @@ function getSeriousDeals() {
       const history = Array.isArray(product.priceHistory) ? product.priceHistory : [];
       const latestHistoryPoint = history[history.length - 1];
       const previousHistoryPoint = history.length > 1 ? history[history.length - 2] : null;
-      const currentPrice = Number(product.currentPrice || latestHistoryPoint?.price || product.price);
+      const rawCurrentPrice = Number(product.currentPrice || latestHistoryPoint?.price || product.price);
       const previousPrice = Number(product.previousPrice || previousHistoryPoint?.price);
+      const currentPrice = getSaneCurrentPrice(rawCurrentPrice, previousPrice);
 
       if (!currentPrice || !previousPrice || currentPrice >= previousPrice) return null;
 
@@ -1831,19 +1876,19 @@ function renderSeriousDeals() {
             <span>${lastChecked}</span>
           </div>
           <div class="deal-meta">
-            <span>Ã–nceki: ${formatPrice(product.previousPrice)}</span>
+            <span>Önceki: ${formatPrice(product.previousPrice)}</span>
             <span class="deal-price">${formatPrice(product.currentPrice)}</span>
           </div>
         </div>
-        <span class="deal-drop">%${dropPercent} dÃ¼ÅŸtÃ¼</span>
+        <span class="deal-drop">%${dropPercent} düştü</span>
       </div>
     `;
   }).join('');
 
   container.innerHTML = `
     <div class="section-title">
-      <h2>Ciddi FÄ±rsatlar</h2>
-      <span>%7+ dÃ¼ÅŸen ${deals.length} Ã¼rÃ¼n</span>
+      <h2>Ciddi Fırsatlar</h2>
+      <span>%7+ düşen ${deals.length} ürün</span>
     </div>
     ${cards}
   `;
@@ -1860,7 +1905,7 @@ function renderTrackedProducts() {
     container.innerHTML = `
       <div class="empty-state">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-        <p>Takip edilen Ã¼rÃ¼n yok.</p>
+        <p>Takip edilen ürün yok.</p>
       </div>`;
     return;
   }
@@ -1873,7 +1918,7 @@ function renderTrackedProducts() {
     
     const currentOptions = Array.from(filterCategory.options).map(o => o.value).filter(Boolean);
     if (JSON.stringify(currentOptions) !== JSON.stringify(uniqueCategories)) {
-      filterCategory.innerHTML = '<option value="">TÃ¼mÃ¼</option>';
+      filterCategory.innerHTML = '<option value="">Tümü</option>';
       uniqueCategories.forEach(cat => {
         const opt = document.createElement('option');
         opt.value = cat;
@@ -1910,7 +1955,7 @@ function renderTrackedProducts() {
   if (filtered.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
-        <p>Filtreye uygun Ã¼rÃ¼n bulunamadÄ±.</p>
+        <p>Filtreye uygun ürün bulunamadı.</p>
       </div>`;
     return;
   }
@@ -1925,8 +1970,9 @@ function renderTrackedProducts() {
       ? `<span>${productStore}</span>`
       : '';
     const priceStateClass = getPriceStateClass(product);
-    const currentPrice = Number(product.currentPrice);
+    const rawCurrentPrice = Number(product.currentPrice);
     const previousPrice = Number(product.previousPrice);
+    const currentPrice = getSaneCurrentPrice(rawCurrentPrice, previousPrice);
     const previousPriceHtml = previousPrice && currentPrice && previousPrice !== currentPrice
       ? `<span class="previous-price">${formatPrice(previousPrice)}</span>`
       : '';
@@ -1936,7 +1982,7 @@ function renderTrackedProducts() {
       errorHtml = `<div class="error-text">${escapeHtml(product.lastError)}</div>`;
     }
     
-    let dateText = 'HiÃ§ kontrol edilmedi';
+    let dateText = 'Hiç kontrol edilmedi';
     if (product.lastCheckedAt) {
       const d = new Date(product.lastCheckedAt);
       dateText = d.toLocaleString('tr-TR');
@@ -1947,7 +1993,7 @@ function renderTrackedProducts() {
     const detailsHtml = [sparklineHtml, analysisHtml].filter(Boolean).join('');
     
     let discountBadgeHtml = '';
-    let currentPriceHtml = `<span class="price compact-price ${priceStateClass}">${formatPrice(product.currentPrice)}</span>`;
+    let currentPriceHtml = `<span class="price compact-price ${priceStateClass}">${formatPrice(currentPrice)}</span>`;
     let oldPriceStrikeHtml = previousPriceHtml;
 
     const analysis = product.akakceMarketAnalysis;
@@ -1956,7 +2002,7 @@ function renderTrackedProducts() {
       const original = Number(analysis.originalPrice || product.currentPrice);
       const current = Number(product.currentPrice);
       
-      let badgeLabel = 'Sepette Ä°ndirim';
+      let badgeLabel = 'Sepette İndirim';
       let badgeClass = 'badge-discount-sepet';
       
       if (type === 'webe_ozel') {
@@ -1977,7 +2023,7 @@ function renderTrackedProducts() {
     let boughtInfoHtml = '';
     if (product.isBought && product.boughtPrice) {
       boughtInfoHtml = `<div class="bought-price-badge" style="font-size: 11px; color: var(--warning); font-weight: 650; margin-top: 4px;">
-        ğŸ›’ ${formatPrice(product.boughtPrice)} fiyatÄ±yla satÄ±n alÄ±ndÄ± (${new Date(product.boughtAt).toLocaleDateString('tr-TR')})
+        ${formatPrice(product.boughtPrice)} fiyatıyla satın alındı (${new Date(product.boughtAt).toLocaleDateString('tr-TR')})
       </div>`;
     }
 
@@ -1989,11 +2035,11 @@ function renderTrackedProducts() {
        if (changePercent <= -12) {
           badgeHtml = `<span class="badge badge-hot">%${Math.round(absolutePercent)} Dibe Vurdu</span>`;
        } else if (changePercent <= -3) {
-          badgeHtml = `<span class="badge badge-drop">%${Math.round(absolutePercent)} Ä°ndirim</span>`;
+          badgeHtml = `<span class="badge badge-drop">%${Math.round(absolutePercent)} İndirim</span>`;
        } else if (changePercent >= 8) {
-          badgeHtml = `<span class="badge badge-rise">%${Math.round(absolutePercent)} Sert YÃ¼kseliÅŸ</span>`;
+          badgeHtml = `<span class="badge badge-rise">%${Math.round(absolutePercent)} Sert Yükseliş</span>`;
        } else if (changePercent >= 3) {
-          badgeHtml = `<span class="badge badge-rise">%${Math.round(absolutePercent)} YÃ¼kseliÅŸte</span>`;
+          badgeHtml = `<span class="badge badge-rise">%${Math.round(absolutePercent)} Yükselişte</span>`;
        }
     }
 
@@ -2012,7 +2058,7 @@ function renderTrackedProducts() {
         </div>
         <div class="tracked-actions" style="position: relative;">
           <div class="card-menu-wrapper">
-            <button class="icon-btn btn-card-menu" data-id="${product.id}" title="Ä°ÅŸlemler" aria-label="Ä°ÅŸlemler">
+            <button class="icon-btn btn-card-menu" data-id="${product.id}" title="İşlemler" aria-label="İşlemler">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="1.5"/>
                 <circle cx="12" cy="5" r="1.5"/>

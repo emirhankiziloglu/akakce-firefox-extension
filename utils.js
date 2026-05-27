@@ -500,7 +500,24 @@ function extractEpeyBestPriceFromText(text, title = '') {
   const matches = [...scoped.matchAll(/(\d[\d.\s]*,\d{2})\s*TL/g)]
     .map(match => normalizePrice(match[1]))
     .filter(price => price > 0);
-  return matches.length ? Math.min(...matches.slice(0, 30)) : 0;
+  return chooseRepresentativeLowestPrice(matches.slice(0, 30));
+}
+
+function chooseRepresentativeLowestPrice(prices) {
+  const sorted = prices
+    .map(Number)
+    .filter(price => Number.isFinite(price) && price > 0)
+    .sort((a, b) => a - b);
+  if (sorted.length === 0) return 0;
+  if (sorted.length === 1) return sorted[0];
+
+  const mid = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2 === 0
+    ? (sorted[mid - 1] + sorted[mid]) / 2
+    : sorted[mid];
+  const plausibleFloor = median * 0.35;
+  const plausible = sorted.filter(price => price >= plausibleFloor);
+  return plausible.length ? plausible[0] : sorted[0];
 }
 
 function createEpeyProduct({ title, price, url, category }) {
