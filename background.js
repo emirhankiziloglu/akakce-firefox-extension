@@ -13,6 +13,8 @@ import {
 } from './utils.js';
 import { cloudSyncProduct, cloudAddPriceHistory } from './supabase.js';
 
+let scanCancelRequested = false;
+
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'checkPrices') {
     await checkAllPrices();
@@ -27,6 +29,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 });
 
 async function checkAllPrices(isManual = false) {
+  scanCancelRequested = false;
   const products = await loadTrackedProducts();
   const settings = await loadSettings();
 
@@ -34,8 +37,11 @@ async function checkAllPrices(isManual = false) {
 
   let updated = false;
   const total = products.length;
+  let scanned = 0;
 
   for (let i = 0; i < products.length; i++) {
+    if (scanCancelRequested) break;
+
     const product = products[i];
 
     // İlerleme durumunu popup'a bildir
@@ -49,11 +55,13 @@ async function checkAllPrices(isManual = false) {
     // Rate limiting: ürünler arası 6-10 sn bekleme
     if (i > 0) {
       const delay = Math.floor(Math.random() * 4000) + 6000;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await cancellableDelay(delay);
+      if (scanCancelRequested) break;
     }
     // Her 10 üründe 20 sn dinlenme (CF rate limit reset)
     if (i > 0 && i % 10 === 0) {
-      await new Promise(resolve => setTimeout(resolve, 20000));
+      await cancellableDelay(20000);
+      if (scanCancelRequested) break;
     }
 
     try {
@@ -161,14 +169,34 @@ async function checkAllPrices(isManual = false) {
     } catch (error) {
       product.lastError = 'Bağlantı hatası: ' + error.message;
     }
+
+    scanned = i + 1;
   }
 
-  // Tarama bitti
-  chrome.runtime.sendMessage({ action: 'scan_done', total }).catch(() => {});
+  chrome.runtime.sendMessage({
+    action: scanCancelRequested ? 'scan_cancelled' : 'scan_done',
+    current: scanned,
+    total
+  }).catch(() => {});
+  scanCancelRequested = false;
 
   if (updated || products.length > 0) {
     await saveTrackedProducts(products);
   }
+}
+
+function cancellableDelay(ms) {
+  return new Promise(resolve => {
+    const startedAt = Date.now();
+    const tick = () => {
+      if (scanCancelRequested || Date.now() - startedAt >= ms) {
+        resolve();
+        return;
+      }
+      setTimeout(tick, 250);
+    };
+    tick();
+  });
 }
 
 async function applyItopyaExactSkuUpgrade(product, products) {
@@ -428,6 +456,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'check_now') {
     checkAllPrices(true).then(() => sendResponse({ success: true }));
     return true;
+  }
+  if (request.action === 'cancel_scan') {
+    scanCancelRequested = true;
+    sendResponse({ success: true });
+    return false;
   }
   if (request.action === 'check_product') {
     checkOnePrice(request.product)

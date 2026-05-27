@@ -2179,3 +2179,42 @@ button:disabled:hover {
   margin-bottom: 14px;
   padding: 10px 12px;
 }
+
+.scan-progress-header,
+.scan-progress-actions {
+  align-items: center;
+  display: flex;
+}
+
+.scan-progress-header {
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.scan-progress-actions {
+  gap: 8px;
+}
+
+.scan-cancel-btn {
+  align-items: center;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  border-radius: 8px;
+  color: #f87171;
+  cursor: pointer;
+  display: inline-flex;
+  height: 26px;
+  justify-content: center;
+  padding: 0;
+  width: 26px;
+}
+
+.scan-cancel-btn:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+}
+
+.scan-cancel-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}

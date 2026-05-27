@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   on('btn-test-whatsapp', 'click', handleTestWhatsApp);
   on('btn-open-settings', 'click', () => activateTab('settings'));
   on('btn-check-all', 'click', handleCheckAllProducts);
+  on('btn-cancel-scan', 'click', handleCancelScan);
   on('btn-export', 'click', handleExport);
   on('btn-import', 'click', () => document.getElementById('import-file')?.click());
   on('btn-tracked-menu', 'click', toggleTrackedOverflowMenu);
@@ -158,7 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     const shortDate = formatShortDate(nearest.date);
     const boughtMarker = isBoughtPoint ? ` <span style="color: #fbbf24; font-weight: 700;">(Satın Alındı)</span>` : '';
-    tooltip.innerHTML = `${shortDate} Â· ${priceStr}${changeHtml}${boughtMarker}`;
+    tooltip.innerHTML = `${shortDate} · ${priceStr}${changeHtml}${boughtMarker}`;
     tooltip.classList.add('visible');
 
     // Position tooltip clamped within container
@@ -181,8 +182,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.action === 'scan_progress') {
       showScanProgress(msg.current, msg.total, msg.title);
-    } else if (msg.action === 'scan_done' || msg.action === 'product_updated') {
+    } else if (msg.action === 'scan_cancelled') {
+      hideScanProgress(msg.total, { cancelled: true, current: msg.current });
+      loadTrackedProducts()
+        .then(p => { trackedProducts = p; renderTrackedProducts(); })
+        .catch(() => { trackedProducts = []; renderTrackedProducts(); });
+    } else if (msg.action === 'scan_done') {
       hideScanProgress(msg.total);
+      loadTrackedProducts()
+        .then(p => { trackedProducts = p; renderTrackedProducts(); })
+        .catch(() => { trackedProducts = []; renderTrackedProducts(); });
+    } else if (msg.action === 'product_updated') {
       loadTrackedProducts()
         .then(p => { trackedProducts = p; renderTrackedProducts(); })
         .catch(() => { trackedProducts = []; renderTrackedProducts(); });
@@ -205,8 +215,8 @@ async function initGamingGecesi() {
   try {
     await loadGamingWeeksFromCloud();
   } catch (error) {
-    list.innerHTML = `<div class="empty-state"><p>Gaming Gecesi verileri okunamadÄ±.</p></div>`;
-    setGamingMeta(error.message || 'Supabase tablosu hazÄ±r deÄŸil');
+    list.innerHTML = `<div class="empty-state"><p>Gaming Gecesi verileri okunamadı.</p></div>`;
+    setGamingMeta(error.message || 'Supabase tablosu hazır değil');
   }
 }
 
@@ -290,7 +300,7 @@ async function syncGamingGecesiArchive({ force = false } = {}) {
       await cloudUpsertGamingProducts(products);
     }
 
-    setGamingMeta('Senkron tamamlandÄ±');
+    setGamingMeta('Senkron tamamlandı');
     await loadGamingWeeksFromCloud();
   } catch (error) {
     setGamingMeta(`Senkron başarısız: ${error.message}`);
@@ -332,7 +342,7 @@ function renderGamingProducts() {
   if (query) products = products.filter(product => String(product.name || '').toLocaleLowerCase('tr-TR').includes(query));
 
   if (products.length === 0) {
-    list.innerHTML = `<div class="empty-state"><p>Filtreye uygun fÄ±rsat yok.</p></div>`;
+    list.innerHTML = `<div class="empty-state"><p>Filtreye uygun fırsat yok.</p></div>`;
     return;
   }
 
@@ -682,17 +692,17 @@ async function initAuth() {
     const formValid = emailValid && passwordValid;
 
     if (emailInput) emailInput.setCustomValidity(email || !showMessage ? '' : 'E-posta adresi gerekli.');
-    if (passwordInput) passwordInput.setCustomValidity(password || !showMessage ? '' : 'Åifre gerekli.');
+    if (passwordInput) passwordInput.setCustomValidity(password || !showMessage ? '' : 'Şifre gerekli.');
 
     if (signinBtn) signinBtn.disabled = authBusy;
     if (signupBtn) signupBtn.disabled = authBusy;
 
     if (showMessage) {
-      if (!email) showAuthError('E-posta adresi boÅŸ olamaz.');
-      else if (!emailValid) showAuthError('GeÃ§erli bir e-posta adresi girin.');
-      else if (!password) showAuthError('Åifre boÅŸ olamaz.');
-      else if (password.length < 6) showAuthError('Åifre en az 6 karakter olmalÄ±.');
-      else if (password.length > 72) showAuthError('Åifre en fazla 72 karakter olabilir.');
+      if (!email) showAuthError('E-posta adresi boş olamaz.');
+      else if (!emailValid) showAuthError('Geçerli bir e-posta adresi girin.');
+      else if (!password) showAuthError('Şifre boş olamaz.');
+      else if (password.length < 6) showAuthError('Şifre en az 6 karakter olmalı.');
+      else if (password.length > 72) showAuthError('Şifre en fazla 72 karakter olabilir.');
       else hideAuthError();
     } else if (formValid) {
       hideAuthError();
@@ -703,10 +713,10 @@ async function initAuth() {
 
   function updateHeaderBadge(session) {
     if (session?.user) {
-      emailSpan.textContent = session.user.email?.split('@')[0] || 'HesabÄ±m';
+      emailSpan.textContent = session.user.email?.split('@')[0] || 'Hesabım';
       profileBtn.classList.add('active');
     } else {
-      emailSpan.textContent = 'GiriÅŸ Yap';
+      emailSpan.textContent = 'Giriş Yap';
       profileBtn.classList.remove('active');
     }
   }
@@ -722,9 +732,9 @@ async function initAuth() {
       const authName = document.getElementById('auth-name');
       const authEmail = document.getElementById('auth-email-display');
       const productCount = document.getElementById('auth-product-count');
-      if (authName) authName.textContent = currentSession.user.email || 'KullanÄ±cÄ±';
+      if (authName) authName.textContent = currentSession.user.email || 'Kullanıcı';
       if (authEmail) authEmail.textContent = currentSession.user.email || '';
-      if (productCount) productCount.textContent = `${trackedProducts.length} Ã¼rÃ¼n senkronize`;
+      if (productCount) productCount.textContent = `${trackedProducts.length} ürün senkronize`;
     } else {
       if (signedOut) signedOut.style.display = 'block';
       if (signedIn) signedIn.style.display = 'none';
@@ -735,13 +745,13 @@ async function initAuth() {
     Promise.resolve()
       .then(reloadCloudState)
       .catch(error => {
-        showStatus('Buluttaki Ã¼rÃ¼nler okunamadÄ±: ' + error.message, 'error');
+        showStatus('Buluttaki ürünler okunamadı: ' + error.message, 'error');
       });
   }
 
   updateHeaderBadge(currentSession);
 
-  // Auth modal GiriÅŸ/KayÄ±t sekme geÃ§iÅŸi
+  // Auth modal Giriş/Kayıt sekme geçişi
   function switchAuthTab(tab) {
     const signinBtn = document.getElementById('tab-signin-btn');
     const signupBtn = document.getElementById('tab-signup-btn');
@@ -765,7 +775,7 @@ async function initAuth() {
     validateAuthForm();
   }
 
-  // Auth ekranÄ±: oturum yoksa baÅŸlangÄ±Ã§ta gÃ¶rÃ¼nÃ¼r
+  // Auth ekranı: oturum yoksa başlangıçta görünür
   if (!currentSession?.user) {
     setAppLocked(true);
     if (verifying) verifying.style.display = 'none';
@@ -786,13 +796,13 @@ async function initAuth() {
   on('auth-password-input', 'blur', () => validateAuthForm({ showMessage: true }));
   validateAuthForm();
 
-  // Header "GiriÅŸ Yap" butonu â†’ hesap ekranÄ± aÃ§ar
+  // Header "Giriş Yap" butonu → hesap ekranı açar
   if (profileBtn) profileBtn.addEventListener('click', openScreen);
   on('btn-close-auth', 'click', closeScreen);
 
-  // Header "HesabÄ±m" ikonu (giriÅŸ yapÄ±lmÄ±ÅŸken) â†’ hesap ekranÄ± aÃ§ar (Ã§Ä±kÄ±ÅŸ iÃ§in)
+  // Header "Hesabım" ikonu (giriş yapılmışken) → hesap ekranı açar (çıkış için)
 
-  // GiriÅŸ Yap
+  // Giriş Yap
   on('btn-email-signin', 'click', async () => {
     const email = document.getElementById('auth-email-input')?.value.trim();
     const password = document.getElementById('auth-password-input')?.value;
@@ -800,24 +810,24 @@ async function initAuth() {
     hideAuthError();
     const btn = document.getElementById('btn-email-signin');
     authBusy = true;
-    btn.textContent = 'GiriÅŸ yapÄ±lÄ±yor...'; btn.disabled = true;
+    btn.textContent = 'Giriş yapılıyor...'; btn.disabled = true;
     try {
       currentSession = await signInWithEmail(email, password);
       updateHeaderBadge(currentSession);
       setAppLocked(false);
       closeScreen();
-      showStatus('GiriÅŸ baÅŸarÄ±lÄ±! Veriler buluta senkronize ediliyor.', 'success');
+      showStatus('Giriş başarılı! Veriler buluta senkronize ediliyor.', 'success');
       await reloadCloudState();
     } catch (e) {
-      showAuthError(e.message || 'GiriÅŸ baÅŸarÄ±sÄ±z.');
+      showAuthError(e.message || 'Giriş başarısız.');
     } finally {
       authBusy = false;
-      btn.textContent = 'GiriÅŸ Yap';
+      btn.textContent = 'Giriş Yap';
       validateAuthForm();
     }
   });
 
-  // KayÄ±t Ol
+  // Kayıt Ol
   on('btn-email-signup', 'click', async () => {
     const email = document.getElementById('auth-email-input')?.value.trim();
     const password = document.getElementById('auth-password-input')?.value;
@@ -825,7 +835,7 @@ async function initAuth() {
     hideAuthError();
     const btn = document.getElementById('btn-email-signup');
     authBusy = true;
-    btn.textContent = 'Hesap oluÅŸturuluyor...'; btn.disabled = true;
+    btn.textContent = 'Hesap oluşturuluyor...'; btn.disabled = true;
     try {
       const result = await signUp(email, password);
       if (result.access_token) {
@@ -833,25 +843,25 @@ async function initAuth() {
         updateHeaderBadge(currentSession);
         setAppLocked(false);
         closeScreen();
-        showStatus('Hesap oluÅŸturuldu! HoÅŸ geldin.', 'success');
+        showStatus('Hesap oluşturuldu! Hoş geldin.', 'success');
       } else {
-        showAuthError('KayÄ±t baÅŸarÄ±lÄ±! E-postanÄ± doÄŸrula ve giriÅŸ yap.');
+        showAuthError('Kayıt başarılı! E-postanı doğrula ve giriş yap.');
       }
     } catch (e) {
-      showAuthError(e.message || 'KayÄ±t baÅŸarÄ±sÄ±z.');
+      showAuthError(e.message || 'Kayıt başarısız.');
     } finally {
       authBusy = false;
-      btn.textContent = 'Hesap OluÅŸtur';
+      btn.textContent = 'Hesap Oluştur';
       validateAuthForm();
     }
   });
 
-  // Ã‡Ä±kÄ±ÅŸ Yap
+  // Çıkış Yap
   on('btn-signout', 'click', async () => {
     const btn = document.getElementById('btn-signout');
     if (btn) {
       btn.disabled = true;
-      btn.textContent = 'Ã‡Ä±kÄ±ÅŸ yapÄ±lÄ±yor...';
+      btn.textContent = 'Çıkış yapılıyor...';
     }
     try {
       await signOut();
@@ -864,13 +874,13 @@ async function initAuth() {
       setAppLocked(true);
       refreshScreenState();
       if (screen) screen.style.transform = 'translateX(0)';
-      showStatus('Ã‡Ä±kÄ±ÅŸ yapÄ±ldÄ±.', 'info');
+      showStatus('Çıkış yapıldı.', 'info');
     } catch (e) {
-      showAuthError(e.message || 'Ã‡Ä±kÄ±ÅŸ yapÄ±lamadÄ±.');
+      showAuthError(e.message || 'Çıkış yapılamadı.');
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.textContent = 'Ã‡Ä±kÄ±ÅŸ Yap';
+        btn.textContent = 'Çıkış Yap';
       }
     }
   });
@@ -932,7 +942,7 @@ function showStatus(message, type = 'info') {
 
 async function handleCheckAllProducts() {
   if (trackedProducts.length === 0) {
-    showStatus('Takip edilen Ã¼rÃ¼n yok.', 'info');
+    showStatus('Takip edilen ürün yok.', 'info');
     updateCheckAllButtonState();
     return;
   }
@@ -944,11 +954,19 @@ async function handleCheckAllProducts() {
     btn.style.cursor = 'not-allowed';
   }
 
-  showScanProgress(0, trackedProducts.length, 'BaÅŸlatÄ±lÄ±yor...');
+  showScanProgress(0, trackedProducts.length, 'Başlatılıyor...');
 
   chrome.runtime.sendMessage({ action: 'check_now' }, () => {
-    // background yanÄ±t verince buton aktif olacak (scan_done mesajÄ±yla)
+    // background yanıt verince buton aktif olacak (scan_done mesajıyla)
   });
+}
+
+function handleCancelScan() {
+  const cancelBtn = document.getElementById('btn-cancel-scan');
+  const statusText = document.getElementById('scan-status-text');
+  if (cancelBtn) cancelBtn.disabled = true;
+  if (statusText) statusText.textContent = 'Durduruluyor...';
+  chrome.runtime.sendMessage({ action: 'cancel_scan' }, () => {});
 }
 
 function showScanProgress(current, total, title) {
@@ -957,35 +975,41 @@ function showScanProgress(current, total, title) {
   const counter = document.getElementById('scan-counter');
   const statusText = document.getElementById('scan-status-text');
   const currentItem = document.getElementById('scan-current-item');
+  const cancelBtn = document.getElementById('btn-cancel-scan');
 
   if (!panel || !bar || !counter || !statusText || !currentItem) return;
   panel.style.display = 'block';
+  if (cancelBtn) cancelBtn.disabled = false;
   const pct = total > 0 ? Math.round((current / total) * 100) : 0;
   bar.style.width = pct + '%';
   counter.textContent = `${current} / ${total}`;
-  statusText.textContent = 'TaranÄ±yor...';
+  statusText.textContent = 'Taranıyor...';
   currentItem.textContent = title || '';
 }
 
-function hideScanProgress(total) {
+function hideScanProgress(total, options = {}) {
   const panel = document.getElementById('scan-progress');
   const bar = document.getElementById('scan-progress-bar');
   const counter = document.getElementById('scan-counter');
   const statusText = document.getElementById('scan-status-text');
   const currentItem = document.getElementById('scan-current-item');
   const btn = document.getElementById('btn-check-all');
+  const cancelBtn = document.getElementById('btn-cancel-scan');
 
   if (!panel || !bar || !counter || !statusText || !currentItem) return;
-  bar.style.width = '100%';
-  statusText.textContent = `âœ“ ${total} Ã¼rÃ¼n tarandÄ±`;
+  const current = options.current ?? total;
+  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+  bar.style.width = options.cancelled ? `${pct}%` : '100%';
+  statusText.textContent = options.cancelled ? 'Tarama durduruldu' : `✓ ${total} ürün tarandı`;
   currentItem.textContent = '';
-  counter.textContent = `${total} / ${total}`;
+  counter.textContent = `${current} / ${total}`;
 
   if (btn) {
     btn.disabled = false;
     btn.style.opacity = '';
     btn.style.cursor = '';
   }
+  if (cancelBtn) cancelBtn.disabled = false;
 
   setTimeout(() => {
     panel.style.display = 'none';
@@ -1310,12 +1334,12 @@ async function handleScanPage() {
   const defaultViews = document.getElementById('search-default-views');
   if (defaultViews) defaultViews.style.display = 'none';
 
-  showStatus('ÃœrÃ¼nler taranÄ±yor...', 'info');
+  showStatus('Ürünler taranıyor...', 'info');
   
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const activeTab = tabs[0];
     if (!activeTab || !activeTab.url?.includes('akakce.com')) {
-      showStatus('LÃ¼tfen bir AkakÃ§e sayfasÄ±nda olduÄŸunuzdan emin olun.', 'error');
+      showStatus('Lütfen bir Akakçe sayfasında olduğunuzdan emin olun.', 'error');
       return;
     }
     
@@ -1326,23 +1350,23 @@ async function handleScanPage() {
           files: ['content.js']
         }, () => {
           if (chrome.runtime.lastError) {
-             showStatus('Sayfa okunamadÄ±.', 'error');
+             showStatus('Sayfa okunamadı.', 'error');
              return;
           }
           setTimeout(() => {
              chrome.tabs.sendMessage(activeTab.id, { action: "extract_products" }, (res) => {
                 if (res && res.products) {
                   renderSearchResults(res.products);
-                  showStatus('ÃœrÃ¼nler tarandÄ±.', 'success');
+                  showStatus('Ürünler tarandı.', 'success');
                 } else {
-                  showStatus('ÃœrÃ¼n bulunamadÄ±.', 'error');
+                  showStatus('Ürün bulunamadı.', 'error');
                 }
              });
           }, 200);
         });
       } else if (response && response.products) {
         renderSearchResults(response.products);
-        showStatus('ÃœrÃ¼nler tarandÄ±.', 'success');
+        showStatus('Ürünler tarandı.', 'success');
       }
     });
   });
@@ -1392,7 +1416,7 @@ function renderSearchResults(products) {
       let badgeClass = 'badge-discount-sepet';
       
       if (type === 'webe_ozel') {
-        badgeLabel = "Web'e Ã–zel";
+        badgeLabel = "Web'e Özel";
         badgeClass = 'badge-discount-web';
       } else if (type === 'kupon') {
         badgeLabel = 'Kuponla';
@@ -1476,7 +1500,7 @@ async function trackProduct(product, btnElement) {
   chrome.runtime.sendMessage({ action: 'track_product', product: newProduct }, async (response) => {
     if (chrome.runtime.lastError || !response || !response.success) {
       const errMsg = response?.error || chrome.runtime.lastError?.message || 'Bilinmeyen hata';
-      showStatus('ÃœrÃ¼n veritabanÄ±na yazÄ±lamadÄ±: ' + errMsg, 'error');
+      showStatus('Ürün veritabanına yazılamadı: ' + errMsg, 'error');
       if (btnElement) {
         btnElement.textContent = 'Takibe Al';
         btnElement.disabled = false;
@@ -1487,12 +1511,12 @@ async function trackProduct(product, btnElement) {
     await reloadCloudState();
     
     if (btnElement) {
-      btnElement.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:4px; margin-bottom:2px;"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Takibe AlÄ±ndÄ±`;
+      btnElement.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:4px; margin-bottom:2px;"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Takibe Alındı`;
       btnElement.style.background = '#10b981';
       btnElement.disabled = true;
-      showStatus('Takibe alÄ±ndÄ±', 'success');
+      showStatus('Takibe alındı', 'success');
     } else {
-      showStatus('Takibe alÄ±ndÄ±', 'success');
+      showStatus('Takibe alındı', 'success');
     }
   });
 }
@@ -2006,7 +2030,7 @@ function renderTrackedProducts() {
       let badgeClass = 'badge-discount-sepet';
       
       if (type === 'webe_ozel') {
-        badgeLabel = "Web'e Ã–zel";
+        badgeLabel = "Web'e Özel";
         badgeClass = 'badge-discount-web';
       } else if (type === 'kupon') {
         badgeLabel = 'Kuponla';
@@ -2070,7 +2094,7 @@ function renderTrackedProducts() {
                 <span class="dot green-dot"></span><span>Yenile</span>
               </button>
               <button class="menu-item btn-check-bought" data-id="${product.id}">
-                <span class="dot yellow-dot"></span><span>${product.isBought ? 'AlÄ±nmadÄ±' : 'AldÄ±m'}</span>
+                <span class="dot yellow-dot"></span><span>${product.isBought ? 'Alınmadı' : 'Aldım'}</span>
               </button>
               <button class="menu-item btn-check-delete" data-id="${product.id}">
                 <span class="dot red-dot"></span><span>Sil</span>
@@ -2086,7 +2110,7 @@ function renderTrackedProducts() {
         ${boughtInfoHtml}
       </div>
       ${detailsHtml ? `
-        <button class="analysis-toggle-btn btn-show-analysis" type="button" data-id="${product.id}" title="Fiyat analizi ve grafiÄŸi">
+        <button class="analysis-toggle-btn btn-show-analysis" type="button" data-id="${product.id}" title="Fiyat analizi ve grafiği">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 3v18h18"/>
@@ -2111,7 +2135,7 @@ function renderTrackedProducts() {
       if (prodIndex > -1) {
         trackedProducts[prodIndex].targetPrice = isNaN(val) ? 0 : val;
         await cloudSyncProduct(trackedProducts[prodIndex]);
-        showStatus('Hedef fiyat gÃ¼ncellendi', 'success');
+        showStatus('Hedef fiyat güncellendi', 'success');
       }
     });
 
@@ -2204,9 +2228,9 @@ function renderTrackedProducts() {
         }
         await saveTrackedProducts(trackedProducts);
         renderTrackedProducts();
-        showStatus(newBoughtState ? 'ÃœrÃ¼n satÄ±n alÄ±ndÄ± olarak iÅŸaretlendi.' : 'ÃœrÃ¼n satÄ±n alÄ±nmadÄ± olarak iÅŸaretlendi.', 'success');
+        showStatus(newBoughtState ? 'Ürün satın alındı olarak işaretlendi.' : 'Ürün satın alınmadı olarak işaretlendi.', 'success');
       } catch (err) {
-        showStatus('DeÄŸiÅŸiklik kaydedilemedi: ' + err.message, 'error');
+        showStatus('Değişiklik kaydedilemedi: ' + err.message, 'error');
       }
     });
 
@@ -2217,16 +2241,16 @@ function renderTrackedProducts() {
       const openMenu = card.querySelector('.card-dropdown-menu');
       if (openMenu) openMenu.classList.remove('show');
       
-      if (confirm(`"${product.title}" takibini silmek istediÄŸinize emin misiniz?`)) {
+      if (confirm(`"${product.title}" takibini silmek istediğinize emin misiniz?`)) {
         showStatus('Siliniyor...', 'info');
         try {
           await cloudDeleteProduct(product.url);
           trackedProducts = trackedProducts.filter(p => p.id !== product.id);
           await saveTrackedProducts(trackedProducts);
           renderTrackedProducts();
-          showStatus('ÃœrÃ¼n silindi.', 'success');
+          showStatus('Ürün silindi.', 'success');
         } catch (error) {
-          showStatus('ÃœrÃ¼n veritabanÄ±ndan silinemedi: ' + error.message, 'error');
+          showStatus('Ürün veritabanından silinemedi: ' + error.message, 'error');
         }
       }
     });
@@ -2260,7 +2284,7 @@ function getDisplayCategory(product) {
   if (urlCategory && (!storedCategory || isGenericCategory(storedCategory))) {
     return urlCategory;
   }
-  return storedCategory || 'DiÄŸer';
+  return storedCategory || 'Diğer';
 }
 
 function getCategoryFromAkakceUrl(url) {
@@ -2274,12 +2298,12 @@ function getCategoryFromAkakceUrl(url) {
       'ssd': 'SSD',
       'ram': 'RAM',
       'anakart': 'Anakart',
-      'islemci': 'Ä°ÅŸlemci',
-      'ekran-karti': 'Ekran KartÄ±',
-      'bilgisayar-kasa': 'Bilgisayar KasasÄ±',
-      'sivi-sogutma': 'SÄ±vÄ± SoÄŸutma',
-      'islemci-sogutucu': 'Ä°ÅŸlemci SoÄŸutucu',
-      'monitor': 'MonitÃ¶r'
+      'islemci': 'İşlemci',
+      'ekran-karti': 'Ekran Kartı',
+      'bilgisayar-kasa': 'Bilgisayar Kasası',
+      'sivi-sogutma': 'Sıvı Soğutma',
+      'islemci-sogutucu': 'İşlemci Soğutucu',
+      'monitor': 'Monitör'
     };
     if (map[rawCategory]) return map[rawCategory];
     return rawCategory
@@ -2294,10 +2318,10 @@ function getCategoryFromAkakceUrl(url) {
 function isGenericCategory(category) {
   const normalized = String(category || '').toLocaleLowerCase('tr-TR');
   return [
-    'bilgisayar bileÅŸenleri',
-    'bilgisayar, donanÄ±m',
+    'bilgisayar bileşenleri',
+    'bilgisayar, donanım',
     'bilgisayar',
-    'diÄŸer'
+    'diğer'
   ].includes(normalized);
 }
 
@@ -2328,44 +2352,44 @@ async function handleSaveSettings() {
     });
     showStatus('Ayarlar kaydedildi.', 'success');
   } catch (error) {
-    showStatus('Ayarlar veritabanÄ±na yazÄ±lamadÄ±: ' + error.message, 'error');
+    showStatus('Ayarlar veritabanına yazılamadı: ' + error.message, 'error');
   }
 }
 
 async function handleTestDiscord() {
   if (!currentSettings.discordWebhookUrl) {
-    showStatus('Ã–nce Discord Webhook URL girin ve kaydedin.', 'error');
+    showStatus('Önce Discord Webhook URL girin ve kaydedin.', 'error');
     return;
   }
   
   try {
     const payload = {
-      content: "AkakÃ§e Price Tracker test message."
+      content: "Akakçe Price Tracker test message."
     };
     await fetch(currentSettings.discordWebhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    showStatus('Discord test mesajÄ± gÃ¶nderildi.', 'success');
+    showStatus('Discord test mesajı gönderildi.', 'success');
   } catch (e) {
-    showStatus('Discord hatasÄ±: ' + e.message, 'error');
+    showStatus('Discord hatası: ' + e.message, 'error');
   }
 }
 
 async function handleTestWhatsApp() {
   if (!currentSettings.callMeBotPhone || !currentSettings.callMeBotApiKey) {
-    showStatus('Ã–nce WhatsApp ayarlarÄ±nÄ± girin ve kaydedin.', 'error');
+    showStatus('Önce WhatsApp ayarlarını girin ve kaydedin.', 'error');
     return;
   }
   
   try {
-    const text = "AkakÃ§e Price Tracker test message.";
+    const text = "Akakçe Price Tracker test message.";
     const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(currentSettings.callMeBotPhone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(currentSettings.callMeBotApiKey)}`;
     await fetch(url);
-    showStatus('WhatsApp test mesajÄ± gÃ¶nderildi.', 'success');
+    showStatus('WhatsApp test mesajı gönderildi.', 'success');
   } catch (e) {
-    showStatus('WhatsApp hatasÄ±: ' + e.message, 'error');
+    showStatus('WhatsApp hatası: ' + e.message, 'error');
   }
 }
 
@@ -2383,7 +2407,7 @@ function handleExport() {
   a.download = `akakce-tracker-export-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  showStatus('DÄ±ÅŸa aktarÄ±ldÄ±.', 'success');
+  showStatus('Dışa aktarıldı.', 'success');
 }
 
 function handleImport(e) {
@@ -2409,9 +2433,9 @@ function handleImport(e) {
         await saveTrackedProducts(trackedProducts);
         renderTrackedProducts();
       }
-      showStatus('Ä°Ã§e aktarÄ±ldÄ±.', 'success');
+      showStatus('İçe aktarıldı.', 'success');
     } catch (err) {
-      showStatus('GeÃ§ersiz dosya formatÄ±.', 'error');
+      showStatus('Geçersiz dosya formatı.', 'error');
     }
   };
   reader.readAsText(file);
