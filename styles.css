@@ -284,7 +284,42 @@ input, button, select, textarea {
 
 #btn-search {
   flex: 0 0 auto;
-  min-width: 120px;
+  min-width: 82px;
+}
+
+.search-source-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin: -2px 0 2px;
+}
+
+.search-source-option {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  color: var(--foreground);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  gap: 7px;
+  height: 32px;
+  padding: 0 11px 0 9px;
+  user-select: none;
+}
+
+.search-source-option:hover {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.search-source-option input {
+  accent-color: var(--success);
+  height: 14px;
+  margin: 0;
+  width: 14px;
 }
 
 .mini-section-title {
@@ -965,6 +1000,47 @@ button:disabled:hover {
 .store {
   color: var(--muted-foreground);
   font-weight: 600;
+}
+
+.search-source-stack {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.source-badge {
+  align-items: center;
+  border-radius: 9999px;
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 800;
+  height: 22px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0 9px;
+  white-space: nowrap;
+}
+
+.source-akakce {
+  background: rgba(37, 99, 235, 0.14);
+  border: 1px solid rgba(96, 165, 250, 0.26);
+  color: #60a5fa;
+}
+
+.source-epey {
+  background: rgba(249, 115, 22, 0.14);
+  border: 1px solid rgba(251, 146, 60, 0.28);
+  color: #fb923c;
+}
+
+.btn-track.is-tracked,
+.btn-track.is-tracked:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.24);
+  color: var(--success);
+  cursor: default;
+  opacity: 1;
 }
 
 .target-row {

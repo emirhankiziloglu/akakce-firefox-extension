@@ -20,6 +20,7 @@
     "https://*.pttavm.com/*",
     "https://*.n11.com/*",
     "https://*.vatanbilgisayar.com/*",
+    "https://*.epey.com/*",
     "https://api.callmebot.com/*",
     "https://discord.com/api/webhooks/*",
     "https://exifsxceyfjpijansmlb.supabase.co/*"
@@ -47,7 +48,8 @@
         "*://*.incehesap.com/*",
         "*://*.pttavm.com/*",
         "*://*.n11.com/*",
-        "*://*.vatanbilgisayar.com/*"
+        "*://*.vatanbilgisayar.com/*",
+        "*://*.epey.com/*"
       ],
       "js": [
         "content.js"

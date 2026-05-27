@@ -421,7 +421,172 @@ function isGenericCategory(category) {
   ].includes(normalized);
 }
 
-function extractProductsFromHtml(html, baseUrl) {
+function isEpeyUrl(url) {
+  try {
+    return new URL(url).hostname.includes('epey.com');
+  } catch (e) {
+    return false;
+  }
+}
+
+function getEpeyCategoryFromUrl(url) {
+  try {
+    const segment = new URL(url).pathname.split('/').filter(Boolean)[0] || '';
+    const map = {
+      'islemci': 'İşlemci',
+      'ekran-karti': 'Ekran Kartı',
+      'anakart': 'Anakart',
+      'bellek-ram': 'RAM',
+      'ssd': 'SSD',
+      'monitor': 'Monitör',
+      'power-supply': 'Power Supply'
+    };
+    return map[segment] || segment.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Diğer';
+  } catch (e) {
+    return 'Diğer';
+  }
+}
+
+function normalizeSearchText(value) {
+  return String(value || '')
+    .toLocaleLowerCase('tr-TR')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ı/g, 'i')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function searchTokens(value) {
+  return normalizeSearchText(value)
+    .split(/\s+/)
+    .filter(token => token.length >= 2);
+}
+
+function compactSearchText(value) {
+  return normalizeSearchText(value).replace(/\s+/g, '');
+}
+
+function epeyMatchScore(title, query, url = '') {
+  const queryTokens = searchTokens(query);
+  if (queryTokens.length === 0) return 1;
+  const haystack = `${normalizeSearchText(title)} ${normalizeSearchText(url)}`;
+  const matched = queryTokens.filter(token => haystack.includes(token)).length;
+  const tokenScore = matched / queryTokens.length;
+  const compactQuery = compactSearchText(query);
+  const compactHit = compactQuery && (compactSearchText(title).includes(compactQuery) || compactSearchText(url).includes(compactQuery));
+  return Math.max(tokenScore, compactHit ? 1 : 0);
+}
+
+function extractEpeyBestPriceFromText(text, title = '') {
+  const source = String(text || '');
+  const titleBase = String(title || '').replace(/\([^)]*\)/g, '').trim();
+  const headingCandidates = [
+    titleBase ? `${titleBase} Fiyatları` : '',
+    'Fiyatları'
+  ].filter(Boolean);
+  let scoped = source;
+  for (const heading of headingCandidates) {
+    const index = source.indexOf(heading);
+    if (index >= 0) {
+      scoped = source.slice(index);
+      break;
+    }
+  }
+
+  const matches = [...scoped.matchAll(/(\d[\d.\s]*,\d{2})\s*TL/g)]
+    .map(match => normalizePrice(match[1]))
+    .filter(price => price > 0);
+  return matches.length ? Math.min(...matches.slice(0, 30)) : 0;
+}
+
+function createEpeyProduct({ title, price, url, category }) {
+  const uniqueId = btoa(encodeURIComponent(url)).replace(/=/g, '').slice(-30);
+  return {
+    id: uniqueId,
+    title: title || 'Epey Ürünü',
+    price,
+    url,
+    store: 'Epey',
+    category: category || getEpeyCategoryFromUrl(url),
+    source: 'epey'
+  };
+}
+
+function extractEpeyProductsRegex(html, baseUrl, options = {}) {
+  const titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const title = titleMatch
+    ? titleMatch[1].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').replace(/\s+-\s+Epey.*$/i, '').trim()
+    : 'Epey Ürünü';
+  if (options.query && epeyMatchScore(title, options.query, baseUrl) < 0.6) return [];
+  const text = html.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ');
+  const price = extractEpeyBestPriceFromText(text, title);
+  return price > 0 ? [createEpeyProduct({ title, price, url: baseUrl })] : [];
+}
+
+function extractEpeyProductsDOM(doc, baseUrl, options = {}) {
+  const url = new URL(baseUrl);
+  const isProductPage = /\.html$/i.test(url.pathname);
+  const titleNode = doc.querySelector('h1');
+  const pageTitle = titleNode
+    ? titleNode.textContent.trim().replace(/\s+/g, ' ')
+    : (doc.title || '').replace(/\s+-\s+Epey.*$/i, '').trim();
+
+  if (isProductPage) {
+    if (options.query && epeyMatchScore(pageTitle, options.query, baseUrl) < 0.6) return [];
+    const price = extractEpeyBestPriceFromText(doc.body?.textContent || '', pageTitle);
+    return price > 0 ? [createEpeyProduct({ title: pageTitle, price, url: baseUrl })] : [];
+  }
+
+  const products = [];
+  const seen = new Set();
+  const anchors = Array.from(doc.querySelectorAll('a[href*=".html"]'));
+
+  anchors.forEach(anchor => {
+    if (products.length >= 20) return;
+    const rawHref = anchor.getAttribute('href') || '';
+    if (!rawHref || rawHref.includes('/yorum/') || rawHref.includes('/haber/')) return;
+    if (!/\/[^/?#]+\/[^/?#]+\.html(?:$|[?#])/i.test(rawHref)) return;
+
+    const productUrl = rawHref.startsWith('http')
+      ? rawHref
+      : `${url.origin}${rawHref.startsWith('/') ? '' : '/'}${rawHref}`;
+    if (!isEpeyUrl(productUrl) || seen.has(productUrl)) return;
+
+    const container = anchor.closest('li, tr, article, .urun, .listele, div') || anchor.parentElement;
+    const title = (
+      anchor.querySelector('h3, h2, strong')?.textContent ||
+      container?.querySelector('h3, h2, strong')?.textContent ||
+      anchor.getAttribute('title') ||
+      anchor.textContent ||
+      ''
+    ).trim().replace(/\s+/g, ' ');
+    if (title.length < 4) return;
+    if (options.query && epeyMatchScore(title, options.query, productUrl) < 0.6) return;
+
+    const price = extractEpeyBestPriceFromText(`${anchor.textContent || ''} ${container?.textContent || ''}`, title);
+    if (price <= 0) return;
+
+    seen.add(productUrl);
+    products.push(createEpeyProduct({
+      title,
+      price,
+      url: productUrl,
+      category: getEpeyCategoryFromUrl(productUrl)
+    }));
+  });
+
+  return products;
+}
+
+function extractProductsFromHtml(html, baseUrl, options = {}) {
+  if (isEpeyUrl(baseUrl) && typeof DOMParser === 'undefined') {
+    return extractEpeyProductsRegex(html, baseUrl, options);
+  }
+
   const storeObj = getSupportedStore(baseUrl);
 
   if (typeof DOMParser === 'undefined') {
@@ -513,6 +678,10 @@ function extractProductsFromHtml(html, baseUrl) {
 
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
+
+  if (isEpeyUrl(baseUrl)) {
+    return extractEpeyProductsDOM(doc, baseUrl, options);
+  }
 
   if (storeObj) {
     const parsed = extractSellerPriceDOM(doc, baseUrl);

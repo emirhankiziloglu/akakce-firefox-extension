@@ -1,4 +1,4 @@
-import {
+﻿import {
   extractProductsFromHtml,
   formatPrice,
   saveTrackedProducts,
@@ -157,8 +157,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
     const shortDate = formatShortDate(nearest.date);
-    const boughtMarker = isBoughtPoint ? ` <span style="color: #fbbf24; font-weight: 700;">(🛒 Satın Alındı)</span>` : '';
-    tooltip.innerHTML = `${shortDate} · ${priceStr}${changeHtml}${boughtMarker}`;
+    const boughtMarker = isBoughtPoint ? ` <span style="color: #fbbf24; font-weight: 700;">(ğŸ›’ SatÄ±n AlÄ±ndÄ±)</span>` : '';
+    tooltip.innerHTML = `${shortDate} Â· ${priceStr}${changeHtml}${boughtMarker}`;
     tooltip.classList.add('visible');
 
     // Position tooltip clamped within container
@@ -205,8 +205,8 @@ async function initGamingGecesi() {
   try {
     await loadGamingWeeksFromCloud();
   } catch (error) {
-    list.innerHTML = `<div class="empty-state"><p>Gaming Gecesi verileri okunamadı.</p></div>`;
-    setGamingMeta(error.message || 'Supabase tablosu hazır değil');
+    list.innerHTML = `<div class="empty-state"><p>Gaming Gecesi verileri okunamadÄ±.</p></div>`;
+    setGamingMeta(error.message || 'Supabase tablosu hazÄ±r deÄŸil');
   }
 }
 
@@ -215,9 +215,9 @@ async function loadGamingWeeksFromCloud() {
   renderGamingWeekOptions();
 
   if (gamingWeeks.length === 0) {
-    setGamingMeta('Supabase arşivi boş. Senkronize et.');
+    setGamingMeta('Supabase arÅŸivi boÅŸ. Senkronize et.');
     const list = document.getElementById('gaming-list');
-    if (list) list.innerHTML = `<div class="empty-state"><p>Henüz Gaming Gecesi arşivi yok.</p></div>`;
+    if (list) list.innerHTML = `<div class="empty-state"><p>HenÃ¼z Gaming Gecesi arÅŸivi yok.</p></div>`;
     return;
   }
 
@@ -266,7 +266,7 @@ async function loadGamingProductsFromCloud() {
   renderGamingProducts();
 
   const weekMeta = gamingWeeks.find(item => item.campaign_week === week);
-  setGamingMeta(weekMeta?.source_updated_at ? `Son güncelleme: ${formatDateTime(weekMeta.source_updated_at)}` : 'Supabase arşivi');
+  setGamingMeta(weekMeta?.source_updated_at ? `Son gÃ¼ncelleme: ${formatDateTime(weekMeta.source_updated_at)}` : 'Supabase arÅŸivi');
 }
 
 async function syncGamingGecesiArchive({ force = false } = {}) {
@@ -290,10 +290,10 @@ async function syncGamingGecesiArchive({ force = false } = {}) {
       await cloudUpsertGamingProducts(products);
     }
 
-    setGamingMeta('Senkron tamamlandı');
+    setGamingMeta('Senkron tamamlandÄ±');
     await loadGamingWeeksFromCloud();
   } catch (error) {
-    setGamingMeta(`Senkron başarısız: ${error.message}`);
+    setGamingMeta(`Senkron baÅŸarÄ±sÄ±z: ${error.message}`);
     showStatus('Gaming Gecesi senkronize edilemedi: ' + error.message, 'error');
   } finally {
     if (btn) btn.disabled = false;
@@ -305,7 +305,7 @@ function updateGamingCategories() {
   if (!select) return;
   const selected = select.value;
   const categories = [...new Set(gamingProducts.map(product => product.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr'));
-  select.innerHTML = '<option value="all">Tümü</option>';
+  select.innerHTML = '<option value="all">TÃ¼mÃ¼</option>';
   categories.forEach(category => {
     const option = document.createElement('option');
     option.value = category;
@@ -332,7 +332,7 @@ function renderGamingProducts() {
   if (query) products = products.filter(product => String(product.name || '').toLocaleLowerCase('tr-TR').includes(query));
 
   if (products.length === 0) {
-    list.innerHTML = `<div class="empty-state"><p>Filtreye uygun fırsat yok.</p></div>`;
+    list.innerHTML = `<div class="empty-state"><p>Filtreye uygun fÄ±rsat yok.</p></div>`;
     return;
   }
 
@@ -682,17 +682,17 @@ async function initAuth() {
     const formValid = emailValid && passwordValid;
 
     if (emailInput) emailInput.setCustomValidity(email || !showMessage ? '' : 'E-posta adresi gerekli.');
-    if (passwordInput) passwordInput.setCustomValidity(password || !showMessage ? '' : 'Şifre gerekli.');
+    if (passwordInput) passwordInput.setCustomValidity(password || !showMessage ? '' : 'Åifre gerekli.');
 
     if (signinBtn) signinBtn.disabled = authBusy;
     if (signupBtn) signupBtn.disabled = authBusy;
 
     if (showMessage) {
-      if (!email) showAuthError('E-posta adresi boş olamaz.');
-      else if (!emailValid) showAuthError('Geçerli bir e-posta adresi girin.');
-      else if (!password) showAuthError('Şifre boş olamaz.');
-      else if (password.length < 6) showAuthError('Şifre en az 6 karakter olmalı.');
-      else if (password.length > 72) showAuthError('Şifre en fazla 72 karakter olabilir.');
+      if (!email) showAuthError('E-posta adresi boÅŸ olamaz.');
+      else if (!emailValid) showAuthError('GeÃ§erli bir e-posta adresi girin.');
+      else if (!password) showAuthError('Åifre boÅŸ olamaz.');
+      else if (password.length < 6) showAuthError('Åifre en az 6 karakter olmalÄ±.');
+      else if (password.length > 72) showAuthError('Åifre en fazla 72 karakter olabilir.');
       else hideAuthError();
     } else if (formValid) {
       hideAuthError();
@@ -703,10 +703,10 @@ async function initAuth() {
 
   function updateHeaderBadge(session) {
     if (session?.user) {
-      emailSpan.textContent = session.user.email?.split('@')[0] || 'Hesabım';
+      emailSpan.textContent = session.user.email?.split('@')[0] || 'HesabÄ±m';
       profileBtn.classList.add('active');
     } else {
-      emailSpan.textContent = 'Giriş Yap';
+      emailSpan.textContent = 'GiriÅŸ Yap';
       profileBtn.classList.remove('active');
     }
   }
@@ -722,9 +722,9 @@ async function initAuth() {
       const authName = document.getElementById('auth-name');
       const authEmail = document.getElementById('auth-email-display');
       const productCount = document.getElementById('auth-product-count');
-      if (authName) authName.textContent = currentSession.user.email || 'Kullanıcı';
+      if (authName) authName.textContent = currentSession.user.email || 'KullanÄ±cÄ±';
       if (authEmail) authEmail.textContent = currentSession.user.email || '';
-      if (productCount) productCount.textContent = `${trackedProducts.length} ürün senkronize`;
+      if (productCount) productCount.textContent = `${trackedProducts.length} Ã¼rÃ¼n senkronize`;
     } else {
       if (signedOut) signedOut.style.display = 'block';
       if (signedIn) signedIn.style.display = 'none';
@@ -735,13 +735,13 @@ async function initAuth() {
     Promise.resolve()
       .then(reloadCloudState)
       .catch(error => {
-        showStatus('Buluttaki ürünler okunamadı: ' + error.message, 'error');
+        showStatus('Buluttaki Ã¼rÃ¼nler okunamadÄ±: ' + error.message, 'error');
       });
   }
 
   updateHeaderBadge(currentSession);
 
-  // Auth modal Giriş/Kayıt sekme geçişi
+  // Auth modal GiriÅŸ/KayÄ±t sekme geÃ§iÅŸi
   function switchAuthTab(tab) {
     const signinBtn = document.getElementById('tab-signin-btn');
     const signupBtn = document.getElementById('tab-signup-btn');
@@ -765,7 +765,7 @@ async function initAuth() {
     validateAuthForm();
   }
 
-  // Auth ekranı: oturum yoksa başlangıçta görünür
+  // Auth ekranÄ±: oturum yoksa baÅŸlangÄ±Ã§ta gÃ¶rÃ¼nÃ¼r
   if (!currentSession?.user) {
     setAppLocked(true);
     if (verifying) verifying.style.display = 'none';
@@ -786,13 +786,13 @@ async function initAuth() {
   on('auth-password-input', 'blur', () => validateAuthForm({ showMessage: true }));
   validateAuthForm();
 
-  // Header "Giriş Yap" butonu → hesap ekranı açar
+  // Header "GiriÅŸ Yap" butonu â†’ hesap ekranÄ± aÃ§ar
   if (profileBtn) profileBtn.addEventListener('click', openScreen);
   on('btn-close-auth', 'click', closeScreen);
 
-  // Header "Hesabım" ikonu (giriş yapılmışken) → hesap ekranı açar (çıkış için)
+  // Header "HesabÄ±m" ikonu (giriÅŸ yapÄ±lmÄ±ÅŸken) â†’ hesap ekranÄ± aÃ§ar (Ã§Ä±kÄ±ÅŸ iÃ§in)
 
-  // Giriş Yap
+  // GiriÅŸ Yap
   on('btn-email-signin', 'click', async () => {
     const email = document.getElementById('auth-email-input')?.value.trim();
     const password = document.getElementById('auth-password-input')?.value;
@@ -800,24 +800,24 @@ async function initAuth() {
     hideAuthError();
     const btn = document.getElementById('btn-email-signin');
     authBusy = true;
-    btn.textContent = 'Giriş yapılıyor...'; btn.disabled = true;
+    btn.textContent = 'GiriÅŸ yapÄ±lÄ±yor...'; btn.disabled = true;
     try {
       currentSession = await signInWithEmail(email, password);
       updateHeaderBadge(currentSession);
       setAppLocked(false);
       closeScreen();
-      showStatus('Giriş başarılı! Veriler buluta senkronize ediliyor.', 'success');
+      showStatus('GiriÅŸ baÅŸarÄ±lÄ±! Veriler buluta senkronize ediliyor.', 'success');
       await reloadCloudState();
     } catch (e) {
-      showAuthError(e.message || 'Giriş başarısız.');
+      showAuthError(e.message || 'GiriÅŸ baÅŸarÄ±sÄ±z.');
     } finally {
       authBusy = false;
-      btn.textContent = 'Giriş Yap';
+      btn.textContent = 'GiriÅŸ Yap';
       validateAuthForm();
     }
   });
 
-  // Kayıt Ol
+  // KayÄ±t Ol
   on('btn-email-signup', 'click', async () => {
     const email = document.getElementById('auth-email-input')?.value.trim();
     const password = document.getElementById('auth-password-input')?.value;
@@ -825,7 +825,7 @@ async function initAuth() {
     hideAuthError();
     const btn = document.getElementById('btn-email-signup');
     authBusy = true;
-    btn.textContent = 'Hesap oluşturuluyor...'; btn.disabled = true;
+    btn.textContent = 'Hesap oluÅŸturuluyor...'; btn.disabled = true;
     try {
       const result = await signUp(email, password);
       if (result.access_token) {
@@ -833,25 +833,25 @@ async function initAuth() {
         updateHeaderBadge(currentSession);
         setAppLocked(false);
         closeScreen();
-        showStatus('Hesap oluşturuldu! Hoş geldin.', 'success');
+        showStatus('Hesap oluÅŸturuldu! HoÅŸ geldin.', 'success');
       } else {
-        showAuthError('Kayıt başarılı! E-postanı doğrula ve giriş yap.');
+        showAuthError('KayÄ±t baÅŸarÄ±lÄ±! E-postanÄ± doÄŸrula ve giriÅŸ yap.');
       }
     } catch (e) {
-      showAuthError(e.message || 'Kayıt başarısız.');
+      showAuthError(e.message || 'KayÄ±t baÅŸarÄ±sÄ±z.');
     } finally {
       authBusy = false;
-      btn.textContent = 'Hesap Oluştur';
+      btn.textContent = 'Hesap OluÅŸtur';
       validateAuthForm();
     }
   });
 
-  // Çıkış Yap
+  // Ã‡Ä±kÄ±ÅŸ Yap
   on('btn-signout', 'click', async () => {
     const btn = document.getElementById('btn-signout');
     if (btn) {
       btn.disabled = true;
-      btn.textContent = 'Çıkış yapılıyor...';
+      btn.textContent = 'Ã‡Ä±kÄ±ÅŸ yapÄ±lÄ±yor...';
     }
     try {
       await signOut();
@@ -864,13 +864,13 @@ async function initAuth() {
       setAppLocked(true);
       refreshScreenState();
       if (screen) screen.style.transform = 'translateX(0)';
-      showStatus('Çıkış yapıldı.', 'info');
+      showStatus('Ã‡Ä±kÄ±ÅŸ yapÄ±ldÄ±.', 'info');
     } catch (e) {
-      showAuthError(e.message || 'Çıkış yapılamadı.');
+      showAuthError(e.message || 'Ã‡Ä±kÄ±ÅŸ yapÄ±lamadÄ±.');
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.textContent = 'Çıkış Yap';
+        btn.textContent = 'Ã‡Ä±kÄ±ÅŸ Yap';
       }
     }
   });
@@ -932,7 +932,7 @@ function showStatus(message, type = 'info') {
 
 async function handleCheckAllProducts() {
   if (trackedProducts.length === 0) {
-    showStatus('Takip edilen ürün yok.', 'info');
+    showStatus('Takip edilen Ã¼rÃ¼n yok.', 'info');
     updateCheckAllButtonState();
     return;
   }
@@ -944,10 +944,10 @@ async function handleCheckAllProducts() {
     btn.style.cursor = 'not-allowed';
   }
 
-  showScanProgress(0, trackedProducts.length, 'Başlatılıyor...');
+  showScanProgress(0, trackedProducts.length, 'BaÅŸlatÄ±lÄ±yor...');
 
   chrome.runtime.sendMessage({ action: 'check_now' }, () => {
-    // background yanıt verince buton aktif olacak (scan_done mesajıyla)
+    // background yanÄ±t verince buton aktif olacak (scan_done mesajÄ±yla)
   });
 }
 
@@ -963,7 +963,7 @@ function showScanProgress(current, total, title) {
   const pct = total > 0 ? Math.round((current / total) * 100) : 0;
   bar.style.width = pct + '%';
   counter.textContent = `${current} / ${total}`;
-  statusText.textContent = 'Taranıyor...';
+  statusText.textContent = 'TaranÄ±yor...';
   currentItem.textContent = title || '';
 }
 
@@ -977,7 +977,7 @@ function hideScanProgress(total) {
 
   if (!panel || !bar || !counter || !statusText || !currentItem) return;
   bar.style.width = '100%';
-  statusText.textContent = `✓ ${total} ürün tarandı`;
+  statusText.textContent = `âœ“ ${total} Ã¼rÃ¼n tarandÄ±`;
   currentItem.textContent = '';
   counter.textContent = `${total} / ${total}`;
 
@@ -996,33 +996,294 @@ function hideScanProgress(total) {
 async function handleSearch() {
   const query = document.getElementById('search-input')?.value.trim();
   if (!query) return;
-  
+  const sources = getSelectedSearchSources();
+  if (sources.length === 0) {
+    showStatus('En az bir arama kaynağı seçin.', 'error');
+    return;
+  }
+
   const defaultViews = document.getElementById('search-default-views');
   if (defaultViews) defaultViews.style.display = 'none';
-  
+
   showStatus('Aranıyor...', 'info');
   const resultsContainer = document.getElementById('search-results');
   if (!resultsContainer) return;
   resultsContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Yükleniyor...</div>';
-  
-  try {
-    const searchUrl = `https://www.akakce.com/arama/?q=${encodeURIComponent(query)}`;
-    const response = await fetch(searchUrl);
-    const html = await response.text();
-    
-    if (detectBlockedPage(html)) {
-      showStatus('Akakçe sayfası doğrudan okunamadı. Ürün sayfasını Akakçe sekmesinde açıp tekrar deneyin.', 'error');
-      resultsContainer.innerHTML = '';
-      return;
+
+  const allProducts = [];
+  const failedSources = [];
+  for (const source of sources) {
+    try {
+      const searchUrls = buildSearchUrls(query, source);
+      if (searchUrls.length === 0) continue;
+
+      const sourceProducts = [];
+      for (const searchUrl of searchUrls) {
+        let urlProducts = [];
+        try {
+        const response = await fetch(searchUrl, { headers: { Accept: 'text/html,application/xhtml+xml' } });
+          if (response.ok) {
+            const html = await response.text();
+            if (!detectBlockedPage(html)) {
+              urlProducts = extractProductsFromHtml(html, searchUrl, { query });
+            }
+          }
+        } catch (error) {
+          urlProducts = [];
+        }
+
+        if (urlProducts.length === 0 && source === 'epey' && isEpeyProductUrl(searchUrl)) {
+          const tabProduct = await readEpeyProductFromTab(searchUrl, query).catch(() => null);
+          if (tabProduct) urlProducts = [tabProduct];
+        }
+
+        sourceProducts.push(...urlProducts);
+        if (sourceProducts.length > 0 && source === 'epey') break;
+      }
+
+      if (sourceProducts.length === 0) throw new Error('ürün bulunamadı');
+      allProducts.push(...sourceProducts);
+    } catch (sourceError) {
+      console.error(`${source} search failed`, sourceError);
+      failedSources.push(source === 'akakce' ? 'Akakçe' : 'Epey');
     }
-    
-    const products = extractProductsFromHtml(html, "https://www.akakce.com");
-    renderSearchResults(products);
+  }
+
+  const products = dedupeProducts(allProducts);
+  renderSearchResults(products);
+  if (products.length === 0 && failedSources.length) {
+    showStatus(`${failedSources.join(', ')} okunamadı.`, 'error');
+  } else if (failedSources.length) {
+    showStatus(`Arama tamamlandı. Okunamayan: ${failedSources.join(', ')}.`, 'info');
+  } else {
     showStatus('Arama tamamlandı.', 'success');
+  }
+}
+
+function getSelectedSearchSources() {
+  const sources = [];
+  if (document.getElementById('search-source-akakce')?.checked) sources.push('akakce');
+  if (document.getElementById('search-source-epey')?.checked) sources.push('epey');
+  return sources;
+}
+
+function buildSearchUrls(query, source) {
+  const directUrl = parseHttpUrl(query);
+  if (directUrl) {
+    if (source === 'akakce' && directUrl.hostname.includes('akakce.com')) return [directUrl.href];
+    if (source === 'epey' && directUrl.hostname.includes('epey.com')) return [directUrl.href];
+    return [];
+  }
+
+  if (source === 'akakce') return [`https://www.akakce.com/arama/?q=${encodeURIComponent(query)}`];
+  if (source === 'epey') {
+    return [
+      buildEpeySearchUrl(query),
+      ...buildEpeyCandidateUrls(query)
+    ];
+  }
+  return [];
+}
+
+function buildEpeySearchPayload(query) {
+  const normalized = String(query || '').trim();
+  const fields = [
+    `s:3:"ara";s:${utf8ByteLength(normalized)}:"${normalized}";`,
+    's:7:"arasira";i:1;'
+  ];
+
+  return base64Utf8(`a:${fields.length}:{${fields.join('')}}_N;`);
+}
+
+function buildEpeySearchUrl(query) {
+  return `https://www.epey.com/${inferEpeySearchCategory(query)}/e/${buildEpeySearchPayload(query)}/`;
+}
+
+function utf8ByteLength(value) {
+  return new TextEncoder().encode(String(value || '')).length;
+}
+
+function base64Utf8(value) {
+  const bytes = new TextEncoder().encode(String(value || ''));
+  let binary = '';
+  bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+  return btoa(binary);
+}
+
+function buildEpeyCandidateUrls(query) {
+  const category = inferEpeySearchCategory(query);
+  return buildEpeyCandidateSlugs(query).map(slug => `https://www.epey.com/${category}/${slug}.html`);
+}
+
+function inferEpeySearchCategory(query) {
+  const text = normalizeSearchQuery(query);
+  if (/\b(ryzen|intel|core|x3d|i3|i5|i7|i9|islemci|cpu)\b/.test(text)) return 'islemci';
+  if (/\b(rtx|gtx|radeon|geforce|ekran kart|gpu)\b/.test(text)) return 'ekran-karti';
+  if (/\b(ssd|nvme|m2|m\.2)\b/.test(text)) return 'ssd';
+  if (/\b(ram|ddr4|ddr5|bellek)\b/.test(text)) return 'bellek-ram';
+  if (/\b(anakart|b650|x670|b760|z790)\b/.test(text)) return 'anakart';
+  return 'islemci';
+}
+
+function buildEpeyCandidateSlugs(query) {
+  const base = normalizeSearchQuery(query)
+    .replace(/\b(islemci|cpu|processor|fiyat|fiyati|fiyatlari)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const slug = slugifySearchQuery(base);
+  const slugs = new Set();
+  if (slug) slugs.add(slug);
+  if (/\bryzen\b/.test(base) && !slug.startsWith('amd-')) slugs.add(`amd-${slug}`);
+  if (/\b(core|i3|i5|i7|i9)\b/.test(base) && !slug.startsWith('intel-')) slugs.add(`intel-${slug}`);
+  return [...slugs].filter(Boolean);
+}
+
+function normalizeSearchQuery(value) {
+  return String(value || '')
+    .toLocaleLowerCase('tr-TR')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ı/g, 'i')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .replace(/[^a-z0-9.]+/g, ' ')
+    .trim();
+}
+
+function slugifySearchQuery(value) {
+  return normalizeSearchQuery(value)
+    .replace(/\./g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function isEpeyProductUrl(value) {
+  try {
+    const url = new URL(String(value || ''));
+    return url.hostname.includes('epey.com') && /\.html$/i.test(url.pathname);
   } catch (error) {
-    console.error(error);
-    showStatus('Arama sırasında hata oluştu.', 'error');
-    resultsContainer.innerHTML = '';
+    return false;
+  }
+}
+
+async function readEpeyProductFromTab(url, query) {
+  const tab = await chrome.tabs.create({ url, active: false });
+  try {
+    await waitForTabComplete(tab.id, 9000);
+    const [{ result }] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: extractEpeyProductFromPage,
+      args: [url, query]
+    });
+    return result || null;
+  } finally {
+    if (tab?.id) chrome.tabs.remove(tab.id).catch(() => {});
+  }
+}
+
+function waitForTabComplete(tabId, timeoutMs = 9000) {
+  return new Promise(resolve => {
+    let finished = false;
+    const done = () => {
+      if (finished) return;
+      finished = true;
+      chrome.tabs.onUpdated.removeListener(listener);
+      clearTimeout(timer);
+      resolve();
+    };
+    const listener = (updatedTabId, changeInfo) => {
+      if (updatedTabId === tabId && changeInfo.status === 'complete') done();
+    };
+    const timer = setTimeout(done, timeoutMs);
+    chrome.tabs.onUpdated.addListener(listener);
+  });
+}
+
+function extractEpeyProductFromPage(url, query) {
+  const normalize = (value) => String(value || '')
+    .toLocaleLowerCase('tr-TR')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ı/g, 'i')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+  const compact = (value) => normalize(value).replace(/\s+/g, '');
+  const title = (document.querySelector('h1')?.textContent || document.title || '')
+    .replace(/\s+-\s+Epey.*$/i, '')
+    .trim();
+  const queryCompact = compact(query);
+  if (queryCompact && !compact(title).includes(queryCompact) && !compact(url).includes(queryCompact)) return null;
+
+  const text = document.body?.innerText || '';
+  const heading = `${title.replace(/\([^)]*\)/g, '').trim()} Fiyatları`;
+  const headingIndex = text.indexOf(heading);
+  const scoped = headingIndex >= 0 ? text.slice(headingIndex) : text;
+  const prices = [...scoped.matchAll(/(\d[\d.\s]*,\d{2})\s*TL/g)]
+    .map(match => Number.parseFloat(match[1].replace(/\s/g, '').replace(/\./g, '').replace(',', '.')))
+    .filter(price => Number.isFinite(price) && price > 0);
+  if (prices.length === 0) return null;
+
+  const productUrl = location.href || url;
+  const id = btoa(encodeURIComponent(productUrl)).replace(/=/g, '').slice(-30);
+  return {
+    id,
+    title,
+    price: Math.min(...prices.slice(0, 30)),
+    url: productUrl,
+    store: 'Epey',
+    category: 'İşlemci',
+    source: 'epey'
+  };
+}
+
+function parseHttpUrl(value) {
+  try {
+    const url = new URL(String(value || ''));
+    return ['http:', 'https:'].includes(url.protocol) ? url : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function dedupeProducts(products) {
+  const seen = new Set();
+  return products.filter(product => {
+    const key = product.url || product.id || product.title;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function getProductSourceKey(product) {
+  const url = String(product?.url || '').toLowerCase();
+  const source = String(product?.source || '').toLowerCase();
+  const store = String(product?.store || '').toLocaleLowerCase('tr-TR');
+  if (source === 'epey' || url.includes('epey.com') || store.includes('epey')) return 'epey';
+  return 'akakce';
+}
+
+function isProductAlreadyTracked(product) {
+  const productUrl = normalizeTrackedUrl(product?.url);
+  return trackedProducts.some(item => {
+    if (product?.id && item.id === product.id) return true;
+    return productUrl && normalizeTrackedUrl(item.url) === productUrl;
+  });
+}
+
+function normalizeTrackedUrl(value) {
+  try {
+    const url = new URL(String(value || ''));
+    url.hash = '';
+    url.search = '';
+    return url.href.replace(/\/$/, '');
+  } catch (error) {
+    return String(value || '').replace(/[?#].*$/, '').replace(/\/$/, '');
   }
 }
 
@@ -1030,12 +1291,12 @@ async function handleScanPage() {
   const defaultViews = document.getElementById('search-default-views');
   if (defaultViews) defaultViews.style.display = 'none';
 
-  showStatus('Ürünler taranıyor...', 'info');
+  showStatus('ÃœrÃ¼nler taranÄ±yor...', 'info');
   
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const activeTab = tabs[0];
     if (!activeTab || !activeTab.url?.includes('akakce.com')) {
-      showStatus('Lütfen bir Akakçe sayfasında olduğunuzdan emin olun.', 'error');
+      showStatus('LÃ¼tfen bir AkakÃ§e sayfasÄ±nda olduÄŸunuzdan emin olun.', 'error');
       return;
     }
     
@@ -1046,23 +1307,23 @@ async function handleScanPage() {
           files: ['content.js']
         }, () => {
           if (chrome.runtime.lastError) {
-             showStatus('Sayfa okunamadı.', 'error');
+             showStatus('Sayfa okunamadÄ±.', 'error');
              return;
           }
           setTimeout(() => {
              chrome.tabs.sendMessage(activeTab.id, { action: "extract_products" }, (res) => {
                 if (res && res.products) {
                   renderSearchResults(res.products);
-                  showStatus('Ürünler tarandı.', 'success');
+                  showStatus('ÃœrÃ¼nler tarandÄ±.', 'success');
                 } else {
-                  showStatus('Ürün bulunamadı.', 'error');
+                  showStatus('ÃœrÃ¼n bulunamadÄ±.', 'error');
                 }
              });
           }, 200);
         });
       } else if (response && response.products) {
         renderSearchResults(response.products);
-        showStatus('Ürünler tarandı.', 'success');
+        showStatus('ÃœrÃ¼nler tarandÄ±.', 'success');
       }
     });
   });
@@ -1077,16 +1338,26 @@ function renderSearchResults(products) {
     container.innerHTML = '<div style="text-align:center; padding: 20px;">Ürün bulunamadı.</div>';
     return;
   }
-  
-  products.forEach(product => {
+
+  const sortedProducts = [...products].sort((a, b) => {
+    const priceA = Number(a.price) || Number.POSITIVE_INFINITY;
+    const priceB = Number(b.price) || Number.POSITIVE_INFINITY;
+    return priceA - priceB;
+  });
+
+  sortedProducts.forEach(product => {
     const card = document.createElement('div');
     card.className = 'card';
     const productUrl = safeExternalUrl(product.url);
     const productTitle = escapeHtml(product.title);
+    const alreadyTracked = isProductAlreadyTracked(product);
     const productStore = escapeHtml(product.store || 'Bilinmiyor');
-    const storeHtml = productStore && productStore !== 'Bilinmiyor'
+    const sourceKey = getProductSourceKey(product);
+    const sourceLabel = sourceKey === 'epey' ? 'Epey' : 'Akakçe';
+    const sourceBadgeHtml = `<span class="source-badge source-${sourceKey}">${sourceLabel}</span>`;
+    const storeHtml = productStore && productStore !== 'Bilinmiyor' && productStore !== sourceLabel
       ? `<span class="store">${productStore}</span>`
-      : '';
+      : sourceBadgeHtml;
     
     let discountBadgeHtml = '';
     let currentPriceHtml = `<span class="price">${formatPrice(product.price)}</span>`;
@@ -1098,11 +1369,11 @@ function renderSearchResults(products) {
       const original = Number(analysis.originalPrice || product.price);
       const current = Number(product.price);
       
-      let badgeLabel = 'Sepette İndirim';
+      let badgeLabel = 'Sepette Ä°ndirim';
       let badgeClass = 'badge-discount-sepet';
       
       if (type === 'webe_ozel') {
-        badgeLabel = "Web'e Özel";
+        badgeLabel = "Web'e Ã–zel";
         badgeClass = 'badge-discount-web';
       } else if (type === 'kupon') {
         badgeLabel = 'Kuponla';
@@ -1126,15 +1397,20 @@ function renderSearchResults(products) {
           ${currentPriceHtml}
           ${oldPriceStrikeHtml}
         </div>
-        ${storeHtml}
+        <div class="search-source-stack">
+          ${sourceBadgeHtml}
+          ${storeHtml === sourceBadgeHtml ? '' : storeHtml}
+        </div>
       </div>
       <div class="card-actions">
-        <button class="btn-track" data-id="${product.id}">Takibe Al</button>
+        <button class="btn-track ${alreadyTracked ? 'is-tracked' : ''}" data-id="${product.id}" ${alreadyTracked ? 'disabled' : ''}>
+          ${alreadyTracked ? 'Zaten takipte' : 'Takibe Al'}
+        </button>
       </div>
     `;
     
     const trackBtn = card.querySelector('.btn-track');
-    if (trackBtn) trackBtn.addEventListener('click', () => trackProduct(product, trackBtn));
+    if (trackBtn && !alreadyTracked) trackBtn.addEventListener('click', () => trackProduct(product, trackBtn));
     container.appendChild(card);
   });
 }
@@ -1157,7 +1433,7 @@ async function trackProduct(product, btnElement) {
         btnElement.style.background = '';
       }, 2000);
     } else {
-      showStatus('Bu ürün zaten takipte.', 'error');
+      showStatus('Bu Ã¼rÃ¼n zaten takipte.', 'error');
     }
     return;
   }
@@ -1181,7 +1457,7 @@ async function trackProduct(product, btnElement) {
   chrome.runtime.sendMessage({ action: 'track_product', product: newProduct }, async (response) => {
     if (chrome.runtime.lastError || !response || !response.success) {
       const errMsg = response?.error || chrome.runtime.lastError?.message || 'Bilinmeyen hata';
-      showStatus('Ürün veritabanına yazılamadı: ' + errMsg, 'error');
+      showStatus('ÃœrÃ¼n veritabanÄ±na yazÄ±lamadÄ±: ' + errMsg, 'error');
       if (btnElement) {
         btnElement.textContent = 'Takibe Al';
         btnElement.disabled = false;
@@ -1192,12 +1468,12 @@ async function trackProduct(product, btnElement) {
     await reloadCloudState();
     
     if (btnElement) {
-      btnElement.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:4px; margin-bottom:2px;"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Takibe Alındı`;
+      btnElement.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:middle; margin-right:4px; margin-bottom:2px;"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Takibe AlÄ±ndÄ±`;
       btnElement.style.background = '#10b981';
       btnElement.disabled = true;
-      showStatus('Takibe alındı', 'success');
+      showStatus('Takibe alÄ±ndÄ±', 'success');
     } else {
-      showStatus('Takibe alındı', 'success');
+      showStatus('Takibe alÄ±ndÄ±', 'success');
     }
   });
 }
@@ -1398,7 +1674,7 @@ function generateSparkline(history, targetPrice, boughtAt, boughtPrice) {
     const bp = coordsForChart[boughtIndex];
     boughtLineHtml = `
       <line class="chart-bought-line" x1="${bp.x}" x2="${bp.x}" y1="${topForChart}" y2="${hForChart - bottomForChart}" style="stroke: #fbbf24; stroke-width: 1.25px; stroke-dasharray: 3,3; opacity: 0.85;"/>
-      <text class="chart-bought-label" x="${bp.x + 4}" y="${topForChart + 9}" style="fill: #fbbf24; font-size: 8px; font-weight: 700; pointer-events: none;">Satın Alındı</text>
+      <text class="chart-bought-label" x="${bp.x + 4}" y="${topForChart + 9}" style="fill: #fbbf24; font-size: 8px; font-weight: 700; pointer-events: none;">SatÄ±n AlÄ±ndÄ±</text>
     `;
   }
 
@@ -1413,11 +1689,11 @@ function generateSparkline(history, targetPrice, boughtAt, boughtPrice) {
   let trendBadge = '';
   if (Math.abs(trendPercent) >= 0.5) {
     const isDown = trendPercent < 0;
-    const arrow = isDown ? '↓' : '↑';
+    const arrow = isDown ? 'â†“' : 'â†‘';
     const cls = isDown ? 'trend-down' : 'trend-up';
     trendBadge = `<span class="chart-trend-badge ${cls}">${arrow} %${Math.abs(Math.round(trendPercent))}</span>`;
   } else {
-    trendBadge = `<span class="chart-trend-badge trend-flat">→ Sabit</span>`;
+    trendBadge = `<span class="chart-trend-badge trend-flat">â†’ Sabit</span>`;
   }
 
   // Store coords as JSON for interactive tooltip
@@ -1478,19 +1754,19 @@ function generatePriceAnalysis(product) {
   let verdict = '';
   let verdictClass = 'analysis-neutral';
   if (currentPrice <= minPrice) {
-    verdict = '🟢 En düşük fiyat';
+    verdict = 'ğŸŸ¢ En dÃ¼ÅŸÃ¼k fiyat';
     verdictClass = 'analysis-good';
   } else if (periodDiffPercent < -3) {
-    verdict = `🟢 Başlangıca göre ${formatSignedPercent(periodDiffPercent)}`;
+    verdict = `ğŸŸ¢ BaÅŸlangÄ±ca gÃ¶re ${formatSignedPercent(periodDiffPercent)}`;
     verdictClass = 'analysis-good';
   } else if (periodDiffPercent > 3) {
-    verdict = `🔴 Başlangıca göre ${formatSignedPercent(periodDiffPercent)}`;
+    verdict = `ğŸ”´ BaÅŸlangÄ±ca gÃ¶re ${formatSignedPercent(periodDiffPercent)}`;
     verdictClass = 'analysis-bad';
   }
 
   return `
     <div class="price-analysis-mini">
-      <span>${formatPrice(minPrice)} – ${formatPrice(maxPrice)}</span>
+      <span>${formatPrice(minPrice)} â€“ ${formatPrice(maxPrice)}</span>
       ${verdict ? `<span class="${verdictClass}">${verdict}</span>` : ''}
     </div>
   `;
@@ -1555,19 +1831,19 @@ function renderSeriousDeals() {
             <span>${lastChecked}</span>
           </div>
           <div class="deal-meta">
-            <span>Önceki: ${formatPrice(product.previousPrice)}</span>
+            <span>Ã–nceki: ${formatPrice(product.previousPrice)}</span>
             <span class="deal-price">${formatPrice(product.currentPrice)}</span>
           </div>
         </div>
-        <span class="deal-drop">%${dropPercent} düştü</span>
+        <span class="deal-drop">%${dropPercent} dÃ¼ÅŸtÃ¼</span>
       </div>
     `;
   }).join('');
 
   container.innerHTML = `
     <div class="section-title">
-      <h2>Ciddi Fırsatlar</h2>
-      <span>%7+ düşen ${deals.length} ürün</span>
+      <h2>Ciddi FÄ±rsatlar</h2>
+      <span>%7+ dÃ¼ÅŸen ${deals.length} Ã¼rÃ¼n</span>
     </div>
     ${cards}
   `;
@@ -1584,7 +1860,7 @@ function renderTrackedProducts() {
     container.innerHTML = `
       <div class="empty-state">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-        <p>Takip edilen ürün yok.</p>
+        <p>Takip edilen Ã¼rÃ¼n yok.</p>
       </div>`;
     return;
   }
@@ -1597,7 +1873,7 @@ function renderTrackedProducts() {
     
     const currentOptions = Array.from(filterCategory.options).map(o => o.value).filter(Boolean);
     if (JSON.stringify(currentOptions) !== JSON.stringify(uniqueCategories)) {
-      filterCategory.innerHTML = '<option value="">Tümü</option>';
+      filterCategory.innerHTML = '<option value="">TÃ¼mÃ¼</option>';
       uniqueCategories.forEach(cat => {
         const opt = document.createElement('option');
         opt.value = cat;
@@ -1634,7 +1910,7 @@ function renderTrackedProducts() {
   if (filtered.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
-        <p>Filtreye uygun ürün bulunamadı.</p>
+        <p>Filtreye uygun Ã¼rÃ¼n bulunamadÄ±.</p>
       </div>`;
     return;
   }
@@ -1660,7 +1936,7 @@ function renderTrackedProducts() {
       errorHtml = `<div class="error-text">${escapeHtml(product.lastError)}</div>`;
     }
     
-    let dateText = 'Hiç kontrol edilmedi';
+    let dateText = 'HiÃ§ kontrol edilmedi';
     if (product.lastCheckedAt) {
       const d = new Date(product.lastCheckedAt);
       dateText = d.toLocaleString('tr-TR');
@@ -1680,11 +1956,11 @@ function renderTrackedProducts() {
       const original = Number(analysis.originalPrice || product.currentPrice);
       const current = Number(product.currentPrice);
       
-      let badgeLabel = 'Sepette İndirim';
+      let badgeLabel = 'Sepette Ä°ndirim';
       let badgeClass = 'badge-discount-sepet';
       
       if (type === 'webe_ozel') {
-        badgeLabel = "Web'e Özel";
+        badgeLabel = "Web'e Ã–zel";
         badgeClass = 'badge-discount-web';
       } else if (type === 'kupon') {
         badgeLabel = 'Kuponla';
@@ -1701,7 +1977,7 @@ function renderTrackedProducts() {
     let boughtInfoHtml = '';
     if (product.isBought && product.boughtPrice) {
       boughtInfoHtml = `<div class="bought-price-badge" style="font-size: 11px; color: var(--warning); font-weight: 650; margin-top: 4px;">
-        🛒 ${formatPrice(product.boughtPrice)} fiyatıyla satın alındı (${new Date(product.boughtAt).toLocaleDateString('tr-TR')})
+        ğŸ›’ ${formatPrice(product.boughtPrice)} fiyatÄ±yla satÄ±n alÄ±ndÄ± (${new Date(product.boughtAt).toLocaleDateString('tr-TR')})
       </div>`;
     }
 
@@ -1713,11 +1989,11 @@ function renderTrackedProducts() {
        if (changePercent <= -12) {
           badgeHtml = `<span class="badge badge-hot">%${Math.round(absolutePercent)} Dibe Vurdu</span>`;
        } else if (changePercent <= -3) {
-          badgeHtml = `<span class="badge badge-drop">%${Math.round(absolutePercent)} İndirim</span>`;
+          badgeHtml = `<span class="badge badge-drop">%${Math.round(absolutePercent)} Ä°ndirim</span>`;
        } else if (changePercent >= 8) {
-          badgeHtml = `<span class="badge badge-rise">%${Math.round(absolutePercent)} Sert Yükseliş</span>`;
+          badgeHtml = `<span class="badge badge-rise">%${Math.round(absolutePercent)} Sert YÃ¼kseliÅŸ</span>`;
        } else if (changePercent >= 3) {
-          badgeHtml = `<span class="badge badge-rise">%${Math.round(absolutePercent)} Yükselişte</span>`;
+          badgeHtml = `<span class="badge badge-rise">%${Math.round(absolutePercent)} YÃ¼kseliÅŸte</span>`;
        }
     }
 
@@ -1736,7 +2012,7 @@ function renderTrackedProducts() {
         </div>
         <div class="tracked-actions" style="position: relative;">
           <div class="card-menu-wrapper">
-            <button class="icon-btn btn-card-menu" data-id="${product.id}" title="İşlemler" aria-label="İşlemler">
+            <button class="icon-btn btn-card-menu" data-id="${product.id}" title="Ä°ÅŸlemler" aria-label="Ä°ÅŸlemler">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="1.5"/>
                 <circle cx="12" cy="5" r="1.5"/>
@@ -1748,7 +2024,7 @@ function renderTrackedProducts() {
                 <span class="dot green-dot"></span><span>Yenile</span>
               </button>
               <button class="menu-item btn-check-bought" data-id="${product.id}">
-                <span class="dot yellow-dot"></span><span>${product.isBought ? 'Alınmadı' : 'Aldım'}</span>
+                <span class="dot yellow-dot"></span><span>${product.isBought ? 'AlÄ±nmadÄ±' : 'AldÄ±m'}</span>
               </button>
               <button class="menu-item btn-check-delete" data-id="${product.id}">
                 <span class="dot red-dot"></span><span>Sil</span>
@@ -1764,7 +2040,7 @@ function renderTrackedProducts() {
         ${boughtInfoHtml}
       </div>
       ${detailsHtml ? `
-        <button class="analysis-toggle-btn btn-show-analysis" type="button" data-id="${product.id}" title="Fiyat analizi ve grafiği">
+        <button class="analysis-toggle-btn btn-show-analysis" type="button" data-id="${product.id}" title="Fiyat analizi ve grafiÄŸi">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 3v18h18"/>
@@ -1789,7 +2065,7 @@ function renderTrackedProducts() {
       if (prodIndex > -1) {
         trackedProducts[prodIndex].targetPrice = isNaN(val) ? 0 : val;
         await cloudSyncProduct(trackedProducts[prodIndex]);
-        showStatus('Hedef fiyat güncellendi', 'success');
+        showStatus('Hedef fiyat gÃ¼ncellendi', 'success');
       }
     });
 
@@ -1882,9 +2158,9 @@ function renderTrackedProducts() {
         }
         await saveTrackedProducts(trackedProducts);
         renderTrackedProducts();
-        showStatus(newBoughtState ? 'Ürün satın alındı olarak işaretlendi.' : 'Ürün satın alınmadı olarak işaretlendi.', 'success');
+        showStatus(newBoughtState ? 'ÃœrÃ¼n satÄ±n alÄ±ndÄ± olarak iÅŸaretlendi.' : 'ÃœrÃ¼n satÄ±n alÄ±nmadÄ± olarak iÅŸaretlendi.', 'success');
       } catch (err) {
-        showStatus('Değişiklik kaydedilemedi: ' + err.message, 'error');
+        showStatus('DeÄŸiÅŸiklik kaydedilemedi: ' + err.message, 'error');
       }
     });
 
@@ -1895,16 +2171,16 @@ function renderTrackedProducts() {
       const openMenu = card.querySelector('.card-dropdown-menu');
       if (openMenu) openMenu.classList.remove('show');
       
-      if (confirm(`"${product.title}" takibini silmek istediğinize emin misiniz?`)) {
+      if (confirm(`"${product.title}" takibini silmek istediÄŸinize emin misiniz?`)) {
         showStatus('Siliniyor...', 'info');
         try {
           await cloudDeleteProduct(product.url);
           trackedProducts = trackedProducts.filter(p => p.id !== product.id);
           await saveTrackedProducts(trackedProducts);
           renderTrackedProducts();
-          showStatus('Ürün silindi.', 'success');
+          showStatus('ÃœrÃ¼n silindi.', 'success');
         } catch (error) {
-          showStatus('Ürün veritabanından silinemedi: ' + error.message, 'error');
+          showStatus('ÃœrÃ¼n veritabanÄ±ndan silinemedi: ' + error.message, 'error');
         }
       }
     });
@@ -1938,7 +2214,7 @@ function getDisplayCategory(product) {
   if (urlCategory && (!storedCategory || isGenericCategory(storedCategory))) {
     return urlCategory;
   }
-  return storedCategory || 'Diğer';
+  return storedCategory || 'DiÄŸer';
 }
 
 function getCategoryFromAkakceUrl(url) {
@@ -1952,12 +2228,12 @@ function getCategoryFromAkakceUrl(url) {
       'ssd': 'SSD',
       'ram': 'RAM',
       'anakart': 'Anakart',
-      'islemci': 'İşlemci',
-      'ekran-karti': 'Ekran Kartı',
-      'bilgisayar-kasa': 'Bilgisayar Kasası',
-      'sivi-sogutma': 'Sıvı Soğutma',
-      'islemci-sogutucu': 'İşlemci Soğutucu',
-      'monitor': 'Monitör'
+      'islemci': 'Ä°ÅŸlemci',
+      'ekran-karti': 'Ekran KartÄ±',
+      'bilgisayar-kasa': 'Bilgisayar KasasÄ±',
+      'sivi-sogutma': 'SÄ±vÄ± SoÄŸutma',
+      'islemci-sogutucu': 'Ä°ÅŸlemci SoÄŸutucu',
+      'monitor': 'MonitÃ¶r'
     };
     if (map[rawCategory]) return map[rawCategory];
     return rawCategory
@@ -1972,10 +2248,10 @@ function getCategoryFromAkakceUrl(url) {
 function isGenericCategory(category) {
   const normalized = String(category || '').toLocaleLowerCase('tr-TR');
   return [
-    'bilgisayar bileşenleri',
-    'bilgisayar, donanım',
+    'bilgisayar bileÅŸenleri',
+    'bilgisayar, donanÄ±m',
     'bilgisayar',
-    'diğer'
+    'diÄŸer'
   ].includes(normalized);
 }
 
@@ -2006,44 +2282,44 @@ async function handleSaveSettings() {
     });
     showStatus('Ayarlar kaydedildi.', 'success');
   } catch (error) {
-    showStatus('Ayarlar veritabanına yazılamadı: ' + error.message, 'error');
+    showStatus('Ayarlar veritabanÄ±na yazÄ±lamadÄ±: ' + error.message, 'error');
   }
 }
 
 async function handleTestDiscord() {
   if (!currentSettings.discordWebhookUrl) {
-    showStatus('Önce Discord Webhook URL girin ve kaydedin.', 'error');
+    showStatus('Ã–nce Discord Webhook URL girin ve kaydedin.', 'error');
     return;
   }
   
   try {
     const payload = {
-      content: "Akakçe Price Tracker test message."
+      content: "AkakÃ§e Price Tracker test message."
     };
     await fetch(currentSettings.discordWebhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    showStatus('Discord test mesajı gönderildi.', 'success');
+    showStatus('Discord test mesajÄ± gÃ¶nderildi.', 'success');
   } catch (e) {
-    showStatus('Discord hatası: ' + e.message, 'error');
+    showStatus('Discord hatasÄ±: ' + e.message, 'error');
   }
 }
 
 async function handleTestWhatsApp() {
   if (!currentSettings.callMeBotPhone || !currentSettings.callMeBotApiKey) {
-    showStatus('Önce WhatsApp ayarlarını girin ve kaydedin.', 'error');
+    showStatus('Ã–nce WhatsApp ayarlarÄ±nÄ± girin ve kaydedin.', 'error');
     return;
   }
   
   try {
-    const text = "Akakçe Price Tracker test message.";
+    const text = "AkakÃ§e Price Tracker test message.";
     const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(currentSettings.callMeBotPhone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(currentSettings.callMeBotApiKey)}`;
     await fetch(url);
-    showStatus('WhatsApp test mesajı gönderildi.', 'success');
+    showStatus('WhatsApp test mesajÄ± gÃ¶nderildi.', 'success');
   } catch (e) {
-    showStatus('WhatsApp hatası: ' + e.message, 'error');
+    showStatus('WhatsApp hatasÄ±: ' + e.message, 'error');
   }
 }
 
@@ -2061,7 +2337,7 @@ function handleExport() {
   a.download = `akakce-tracker-export-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  showStatus('Dışa aktarıldı.', 'success');
+  showStatus('DÄ±ÅŸa aktarÄ±ldÄ±.', 'success');
 }
 
 function handleImport(e) {
@@ -2087,9 +2363,9 @@ function handleImport(e) {
         await saveTrackedProducts(trackedProducts);
         renderTrackedProducts();
       }
-      showStatus('İçe aktarıldı.', 'success');
+      showStatus('Ä°Ã§e aktarÄ±ldÄ±.', 'success');
     } catch (err) {
-      showStatus('Geçersiz dosya formatı.', 'error');
+      showStatus('GeÃ§ersiz dosya formatÄ±.', 'error');
     }
   };
   reader.readAsText(file);
