@@ -336,7 +336,8 @@ function fetchProductFromOpenTab(product) {
       'https://*.incehesap.com/*', 'https://incehesap.com/*',
       'https://*.pttavm.com/*', 'https://pttavm.com/*',
       'https://*.n11.com/*', 'https://n11.com/*',
-      'https://*.vatanbilgisayar.com/*', 'https://vatanbilgisayar.com/*'
+      'https://*.vatanbilgisayar.com/*', 'https://vatanbilgisayar.com/*',
+      'https://*.epey.com/*', 'https://epey.com/*'
     ] }, (tabs) => {
       const productTab = tabs.find(tab => sameProductUrl(tab.url, product.url));
       if (!productTab?.id) {

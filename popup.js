@@ -1228,12 +1228,12 @@ function waitForTabComplete(tabId, timeoutMs = 9000) {
 function extractEpeyProductFromPage(url, query) {
   const normalize = (value) => String(value || '')
     .toLocaleLowerCase('tr-TR')
-    .replace(/ğ/g, 'g')
-    .replace(/ü/g, 'u')
-    .replace(/ş/g, 's')
-    .replace(/ı/g, 'i')
-    .replace(/ö/g, 'o')
-    .replace(/ç/g, 'c')
+    .replace(/\u011f/g, 'g')
+    .replace(/\u00fc/g, 'u')
+    .replace(/\u015f/g, 's')
+    .replace(/\u0131/g, 'i')
+    .replace(/\u00f6/g, 'o')
+    .replace(/\u00e7/g, 'c')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
   const compact = (value) => normalize(value).replace(/\s+/g, '');
@@ -1243,11 +1243,20 @@ function extractEpeyProductFromPage(url, query) {
   const queryCompact = compact(query);
   if (queryCompact && !compact(title).includes(queryCompact) && !compact(url).includes(queryCompact)) return null;
 
-  const text = document.body?.innerText || '';
-  const heading = `${title.replace(/\([^)]*\)/g, '').trim()} Fiyatları`;
-  const headingIndex = text.indexOf(heading);
-  const scoped = headingIndex >= 0 ? text.slice(headingIndex) : text;
-  const prices = [...scoped.matchAll(/(\d[\d.\s]*,\d{2})\s*TL/g)]
+  const offerRoot = document.querySelector('#fiyatlar') ||
+    document.querySelector('[id*="fiyat" i]') ||
+    Array.from(document.querySelectorAll('section, div, table, ul')).find(node => /Sat(?:\u0131|i)c(?:\u0131|i)ya Git|Siteye Git|Ma(?:\u011f|g)azaya Git/i.test(node.textContent || ''));
+  const rowTexts = offerRoot
+    ? Array.from(offerRoot.querySelectorAll('tr, li, article, .row, [class*="fiyat" i], [class*="price" i]'))
+      .map(node => node.textContent || '')
+      .filter(text => /TL|\u20ba/.test(text) && /Sat(?:\u0131|i)c(?:\u0131|i)ya Git|Siteye Git|Ma(?:\u011f|g)azaya Git|Stokta|Kargo/i.test(text))
+    : [];
+  const text = rowTexts.length ? rowTexts.join('\n') : (offerRoot?.textContent || document.body?.innerText || '');
+  const lines = text.split(/\n+/)
+    .map(line => line.replace(/\s+/g, ' ').trim())
+    .filter(line => /TL|\u20ba/.test(line) && !/taksit|\/\s*ay|ayda|puan|yorum|de(?:\u011f|g)erlendirme|benzer|(?:\u00f6|o)nerilen/i.test(line));
+  const source = lines.length ? lines.join('\n') : text;
+  const prices = [...source.matchAll(/(\d[\d.\s]*,\d{2})\s*(?:TL|\u20ba)/g)]
     .map(match => Number.parseFloat(match[1].replace(/\s/g, '').replace(/\./g, '').replace(',', '.')))
     .filter(price => Number.isFinite(price) && price > 0);
   if (prices.length === 0) return null;
@@ -1262,7 +1271,7 @@ function extractEpeyProductFromPage(url, query) {
     price,
     url: productUrl,
     store: 'Epey',
-    category: 'İşlemci',
+    category: '\u0130\u015flemci',
     source: 'epey'
   };
 }

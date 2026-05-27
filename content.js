@@ -31,6 +31,42 @@ function parseLoosePrice(text) {
   return Number.isFinite(price) ? price : 0;
 }
 
+function extractEpeyProductFromDom(doc, pageUrl) {
+  if (!/epey\.com/i.test(pageUrl) || !/\.html(?:$|[?#])/i.test(pageUrl)) return null;
+
+  const title = (doc.querySelector('h1')?.textContent || doc.title || '')
+    .replace(/\s+-\s+Epey.*$/i, '')
+    .trim();
+  const offerRoot = doc.querySelector('#fiyatlar') ||
+    doc.querySelector('[id*="fiyat" i]') ||
+    Array.from(doc.querySelectorAll('section, div, table, ul')).find(node => /Sat(?:\u0131|i)c(?:\u0131|i)ya Git|Siteye Git|Ma(?:\u011f|g)azaya Git/i.test(node.textContent || ''));
+  if (!offerRoot) return null;
+
+  const rowTexts = Array.from(offerRoot.querySelectorAll('tr, li, article, .row, [class*="fiyat" i], [class*="price" i]'))
+    .map(node => node.textContent || '')
+    .filter(text => /TL|\u20ba/.test(text) && /Sat(?:\u0131|i)c(?:\u0131|i)ya Git|Siteye Git|Ma(?:\u011f|g)azaya Git|Stokta|Kargo/i.test(text));
+  const scoped = rowTexts.length ? rowTexts.join('\n') : offerRoot.textContent || '';
+  const prices = scoped
+    .split(/\n+/)
+    .map(line => line.replace(/\s+/g, ' ').trim())
+    .filter(line => /TL|\u20ba/.test(line) && !/taksit|\/\s*ay|ayda|puan|yorum|de(?:\u011f|g)erlendirme|benzer|(?:\u00f6|o)nerilen/i.test(line))
+    .flatMap(line => [...line.matchAll(/(\d[\d.\s]*,\d{2})\s*(?:TL|\u20ba)/g)].map(match => parseLoosePrice(match[1])))
+    .filter(price => price > 0)
+    .sort((a, b) => a - b);
+  if (prices.length === 0) return null;
+
+  const id = btoa(encodeURIComponent(pageUrl)).replace(/=/g, '').slice(-30);
+  return {
+    id,
+    title: title || 'Epey \u00dcr\u00fcn\u00fc',
+    price: prices[0],
+    url: pageUrl,
+    store: 'Epey',
+    category: getProductCategory(doc),
+    source: 'epey'
+  };
+}
+
 function getCategoryFromUrl(url) {
   try {
     const urlObj = new URL(url);
@@ -381,6 +417,9 @@ function appendMainProduct(products) {
 }
 
 function getMainProduct() {
+  const epeyProduct = extractEpeyProductFromDom(document, window.location.href);
+  if (epeyProduct) return epeyProduct;
+
   const storeObj = getSupportedStore(window.location.href);
   if (storeObj) {
     return extractSellerProductFromDom(document, window.location.href);

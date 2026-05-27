@@ -433,29 +433,29 @@ function getEpeyCategoryFromUrl(url) {
   try {
     const segment = new URL(url).pathname.split('/').filter(Boolean)[0] || '';
     const map = {
-      'islemci': 'İşlemci',
-      'ekran-karti': 'Ekran Kartı',
+      'islemci': '\u0130\u015flemci',
+      'ekran-karti': 'Ekran Kart\u0131',
       'anakart': 'Anakart',
       'bellek-ram': 'RAM',
       'ssd': 'SSD',
-      'monitor': 'Monitör',
+      'monitor': 'Monit\u00f6r',
       'power-supply': 'Power Supply'
     };
-    return map[segment] || segment.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Diğer';
+    return map[segment] || segment.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Di\u011fer';
   } catch (e) {
-    return 'Diğer';
+    return 'Di\u011fer';
   }
 }
 
 function normalizeSearchText(value) {
   return String(value || '')
     .toLocaleLowerCase('tr-TR')
-    .replace(/ğ/g, 'g')
-    .replace(/ü/g, 'u')
-    .replace(/ş/g, 's')
-    .replace(/ı/g, 'i')
-    .replace(/ö/g, 'o')
-    .replace(/ç/g, 'c')
+    .replace(/\u011f/g, 'g')
+    .replace(/\u00fc/g, 'u')
+    .replace(/\u015f/g, 's')
+    .replace(/\u0131/g, 'i')
+    .replace(/\u00f6/g, 'o')
+    .replace(/\u00e7/g, 'c')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
 }
@@ -481,26 +481,86 @@ function epeyMatchScore(title, query, url = '') {
   return Math.max(tokenScore, compactHit ? 1 : 0);
 }
 
-function extractEpeyBestPriceFromText(text, title = '') {
+function getEpeyOfferScopedText(text, title = '') {
   const source = String(text || '');
   const titleBase = String(title || '').replace(/\([^)]*\)/g, '').trim();
   const headingCandidates = [
-    titleBase ? `${titleBase} Fiyatları` : '',
-    'Fiyatları'
+    titleBase ? `${titleBase} Fiyatlar\u0131` : '',
+    'Fiyatlar\u0131',
+    'Sat\u0131c\u0131',
+    'Ma\u011faza'
   ].filter(Boolean);
-  let scoped = source;
+
   for (const heading of headingCandidates) {
     const index = source.indexOf(heading);
-    if (index >= 0) {
-      scoped = source.slice(index);
-      break;
-    }
+    if (index >= 0) return source.slice(index, index + 8000);
   }
 
-  const matches = [...scoped.matchAll(/(\d[\d.\s]*,\d{2})\s*TL/g)]
+  return source.slice(0, 8000);
+}
+
+function extractEpeyOfferPricesFromText(text, title = '') {
+  const scoped = getEpeyOfferScopedText(text, title);
+  const lines = scoped
+    .split(/\n+/)
+    .map(line => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  const offerLines = lines.filter(line =>
+    /TL|\u20ba/.test(line) &&
+    !/taksit|\/\s*ay|ayda|puan|yorum|de(?:\u011f|g)erlendirme|benzer|(?:\u00f6|o)nerilen/i.test(line)
+  );
+  const source = offerLines.length ? offerLines.join('\n') : scoped;
+  return [...source.matchAll(/(\d[\d.\s]*,\d{2})\s*(?:TL|\u20ba)/g)]
     .map(match => normalizePrice(match[1]))
     .filter(price => price > 0);
+}
+
+function extractEpeyBestPriceFromText(text, title = '') {
+  const matches = extractEpeyOfferPricesFromText(text, title);
   return chooseRepresentativeLowestPrice(matches.slice(0, 30));
+}
+
+function extractEpeyOfferTextFromHtml(html) {
+  const source = String(html || '');
+  const idMatch = source.search(/id=["']fiyatlar["']/i);
+  const labelMatch = source.search(/Fiyatlar(?:\u0131)?|Sat(?:\u0131|i)c(?:\u0131|i)|Ma(?:\u011f|g)aza/i);
+  const start = idMatch >= 0 ? idMatch : labelMatch;
+  const scoped = start >= 0 ? source.slice(start, start + 30000) : source.slice(0, 30000);
+  return scoped
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(?:tr|li|div|p|td|span)>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+\n/g, '\n')
+    .replace(/\n\s+/g, '\n');
+}
+
+function extractEpeyProductsRegex(html, baseUrl, options = {}) {
+  const titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const title = titleMatch
+    ? titleMatch[1].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').replace(/\s+-\s+Epey.*$/i, '').trim()
+    : 'Epey \u00dcr\u00fcn\u00fc';
+  if (options.query && epeyMatchScore(title, options.query, baseUrl) < 0.6) return [];
+  const offerText = extractEpeyOfferTextFromHtml(html);
+  const price = extractEpeyBestPriceFromText(offerText, title);
+  return price > 0 ? [createEpeyProduct({ title, price, url: baseUrl })] : [];
+}
+
+function extractEpeyBestPriceFromDom(doc, title = '') {
+  const offerRoot = doc.querySelector('#fiyatlar') ||
+    doc.querySelector('[id*="fiyat" i]') ||
+    Array.from(doc.querySelectorAll('section, div, table, ul')).find(node => /Sat(?:\u0131|i)c(?:\u0131|i)ya Git|Siteye Git|Ma(?:\u011f|g)azaya Git/i.test(node.textContent || ''));
+  if (!offerRoot) return 0;
+
+  const rowNodes = Array.from(offerRoot.querySelectorAll('tr, li, article, .row, [class*="fiyat" i], [class*="price" i]'));
+  const rowTexts = rowNodes
+    .map(node => node.textContent || '')
+    .filter(text => /TL|\u20ba/.test(text) && /Sat(?:\u0131|i)c(?:\u0131|i)ya Git|Siteye Git|Ma(?:\u011f|g)azaya Git|Stokta|Kargo/i.test(text));
+  const scopedText = rowTexts.length ? rowTexts.join('\n') : offerRoot.textContent || '';
+  const prices = extractEpeyOfferPricesFromText(scopedText, title);
+  return chooseRepresentativeLowestPrice(prices.slice(0, 30));
 }
 
 function chooseRepresentativeLowestPrice(prices) {
@@ -524,24 +584,13 @@ function createEpeyProduct({ title, price, url, category }) {
   const uniqueId = btoa(encodeURIComponent(url)).replace(/=/g, '').slice(-30);
   return {
     id: uniqueId,
-    title: title || 'Epey Ürünü',
+    title: title || 'Epey \u00dcr\u00fcn\u00fc',
     price,
     url,
     store: 'Epey',
     category: category || getEpeyCategoryFromUrl(url),
     source: 'epey'
   };
-}
-
-function extractEpeyProductsRegex(html, baseUrl, options = {}) {
-  const titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  const title = titleMatch
-    ? titleMatch[1].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').replace(/\s+-\s+Epey.*$/i, '').trim()
-    : 'Epey Ürünü';
-  if (options.query && epeyMatchScore(title, options.query, baseUrl) < 0.6) return [];
-  const text = html.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ');
-  const price = extractEpeyBestPriceFromText(text, title);
-  return price > 0 ? [createEpeyProduct({ title, price, url: baseUrl })] : [];
 }
 
 function extractEpeyProductsDOM(doc, baseUrl, options = {}) {
@@ -554,7 +603,7 @@ function extractEpeyProductsDOM(doc, baseUrl, options = {}) {
 
   if (isProductPage) {
     if (options.query && epeyMatchScore(pageTitle, options.query, baseUrl) < 0.6) return [];
-    const price = extractEpeyBestPriceFromText(doc.body?.textContent || '', pageTitle);
+    const price = extractEpeyBestPriceFromDom(doc, pageTitle) || extractEpeyBestPriceFromText(doc.body?.textContent || '', pageTitle);
     return price > 0 ? [createEpeyProduct({ title: pageTitle, price, url: baseUrl })] : [];
   }
 
